@@ -1,0 +1,109 @@
+{
+  "projectType": "saas",
+  "projectName": "Lens Music",
+  "projectDescription": "A music distribution platform for managing artists, labels, releases, and lyrics.",
+  "theme": "maple",
+  "primaryColor": "#8B5CF6",
+  "lightColor": "#A78BFA",
+  "darkColor": "#6D28D9",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "architecture"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/artists",
+              "features/labels",
+              "features/releases",
+              "features/lyrics",
+              "features/roles-permissions"
+            ]
+          },
+          {
+            "group": "User Guides",
+            "pages": [
+              "guides/authentication",
+              "guides/managing-artists",
+              "guides/creating-labels",
+              "guides/distributing-releases",
+              "guides/creating-synced-lyrics"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/setup",
+              "development/monorepo-structure",
+              "development/environment-variables",
+              "development/database-schema"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/auth",
+              "api/users",
+              "api/artists",
+              "api/labels",
+              "api/releases",
+              "api/lyrics",
+              "api/roles"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Artist management with status tracking",
+    "Label creation and management with multi-country support",
+    "Music release distribution with UPC and catalog number generation",
+    "Lyrics creation with time-synchronization capabilities",
+    "Role-based access control and permissions",
+    "User authentication and authorization",
+    "Dashboard for managing music distribution workflow"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/signup",
+    "POST /api/auth/login",
+    "GET /api/artists",
+    "POST /api/artists",
+    "GET /api/artists/:id",
+    "PATCH /api/artists/:id",
+    "DELETE /api/artists/:id",
+    "GET /api/labels",
+    "POST /api/labels",
+    "GET /api/labels/:id",
+    "PATCH /api/labels/:id",
+    "DELETE /api/labels/:id",
+    "GET /api/releases",
+    "POST /api/releases",
+    "GET /api/releases/:id",
+    "GET /api/lyrics",
+    "POST /api/lyrics",
+    "GET /api/roles",
+    "POST /api/roles"
+  ]
+}
