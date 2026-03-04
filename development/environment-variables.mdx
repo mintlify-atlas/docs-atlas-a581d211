@@ -131,6 +131,24 @@ The API uses PostgreSQL for data persistence. All database variables are require
   ```
 </ParamField>
 
+### Authentication configuration
+
+<ParamField path="JWT_SECRET" type="string" required>
+  Secret key used to sign and verify JWT authentication tokens.
+
+  ```bash .env
+  JWT_SECRET=your_long_random_secret_key_here
+  ```
+
+  <Warning>
+    Use a strong, randomly generated secret for production. Keep this value secure and never commit it to version control. Tokens expire after 1 week by default.
+  </Warning>
+
+  <Note>
+    Generate a secure secret using: `openssl rand -base64 32` or `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+  </Note>
+</ParamField>
+
 ## Example configurations
 
 Here are example configurations for different environments:
@@ -140,6 +158,8 @@ Here are example configurations for different environments:
 ```bash Development
 NODE_ENV=development
 PORT=8080
+
+JWT_SECRET=dev_secret_key_change_in_production
 
 DB_HOST=localhost
 DB_PORT=5432
@@ -152,6 +172,8 @@ DB_NAME=lens_music_dev
 NODE_ENV=production
 PORT=8080
 
+JWT_SECRET=your_long_random_production_secret_key
+
 DB_HOST=your-db-host.com
 DB_PORT=5432
 DB_USER=lens_music_user
@@ -163,6 +185,8 @@ DB_NAME=lens_music_prod
 NODE_ENV=development
 PORT=8080
 
+JWT_SECRET=docker_dev_secret
+
 DB_HOST=db
 DB_PORT=5432
 DB_USER=lens_music
@@ -173,6 +197,8 @@ DB_NAME=lens_music
 ```bash Testing
 NODE_ENV=test
 PORT=8081
+
+JWT_SECRET=test_secret_key
 
 DB_HOST=localhost
 DB_PORT=5432
