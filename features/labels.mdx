@@ -1,0 +1,359 @@
+---
+title: Labels
+description: Organize and manage music labels for release distribution
+---
+
+Labels represent record labels or publishing entities in your music catalog. They serve as organizational units for grouping releases and managing distribution metadata.
+
+## Overview
+
+The label management system enables you to:
+
+<CardGroup cols={2}>
+  <Card title="Create labels" icon="building">
+    Set up record labels with contact information and location
+  </Card>
+  <Card title="Organize releases" icon="layer-group">
+    Group releases under specific labels for distribution
+  </Card>
+  <Card title="Geographic data" icon="globe">
+    Track label location by country code
+  </Card>
+  <Card title="Contact management" icon="envelope">
+    Store email and description for each label
+  </Card>
+</CardGroup>
+
+## Label entity structure
+
+The `Label` entity contains the following fields:
+
+```typescript
+@Entity('labels')
+@Unique(['id'])
+export class Label extends AbstractEntity {
+  // NAME
+  @Column({ name: 'name', length: 255, type: 'varchar', nullable: false })
+  name: string;
+
+  // EMAIL
+  @Column({ length: 255, type: 'varchar', nullable: true })
+  email: string;
+
+  // DESCRIPTION
+  @Column({ name: 'description', length: 255, type: 'varchar', nullable: true })
+  description: string;
+
+  // USER ID
+  @Column({ name: 'user_id', type: 'uuid', nullable: false })
+  userId: string;
+
+  // COUNTRY
+  @Column({
+    name: 'country',
+    type: 'enum',
+    enum: countriesList.map((country) => country.code),
+    nullable: false,
+    default: 'RW',
+  })
+  country: string;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.labels)
+  user: User;
+
+  @OneToMany(() => Release, (release) => release.label)
+  releases: Release[];
+}
+```
+
+### Core fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `name` | string (255) | Yes | Label's display name |
+| `email` | string (255) | No | Contact email address |
+| `description` | string (255) | No | Label description or bio |
+| `userId` | UUID | Yes | Reference to the owning user |
+| `country` | enum | Yes | ISO country code (default: `RW`) |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+### Relationships
+
+<AccordionGroup>
+  <Accordion title="User relationship" icon="user">
+    Each label is owned by a single user who manages the label's information and releases.
+
+    ```typescript
+    @ManyToOne(() => User, (user) => user.labels)
+    @JoinColumn({ name: 'user_id' })
+    user: User;
+    ```
+  </Accordion>
+
+  <Accordion title="Release relationship" icon="compact-disc">
+    A label can have multiple releases. This relationship allows you to organize your catalog by imprint or sub-label.
+
+    ```typescript
+    @OneToMany(() => Release, (release) => release.label)
+    releases: Release[];
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common operations
+
+### Create a label
+
+Create a new label in your catalog:
+
+```typescript
+POST /labels
+
+{
+  "name": "Deep Sounds Records",
+  "email": "contact@deepsounds.com",
+  "description": "Underground electronic music label",
+  "country": "us"
+}
+```
+
+<Note>
+  The `country` code is automatically converted to uppercase. You can provide it in lowercase (`us`) or uppercase (`US`).
+</Note>
+
+**Response:**
+
+```json
+{
+  "message": "Label created successfully",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Deep Sounds Records",
+    "email": "contact@deepsounds.com",
+    "description": "Underground electronic music label",
+    "country": "US",
+    "userId": "...",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Fetch labels
+
+Retrieve labels with pagination:
+
+```typescript
+GET /labels?page=0&size=10
+```
+
+**Query parameters:**
+- `page` - Page number (default: 0)
+- `size` - Items per page (default: 10)
+- Any additional query parameters are applied as filter conditions
+
+<Tabs>
+  <Tab title="Basic fetch">
+    ```typescript
+    GET /labels?page=0&size=20
+    ```
+  </Tab>
+  <Tab title="With filters">
+    ```typescript
+    GET /labels?page=0&size=10&country=US
+    ```
+    
+    All query parameters except `page` and `size` are used as filter conditions.
+  </Tab>
+</Tabs>
+
+### Get label by ID
+
+Retrieve a specific label's details with related user data:
+
+```typescript
+GET /labels/:id
+```
+
+**Response:**
+
+```json
+{
+  "message": "Label found successfully",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Deep Sounds Records",
+    "email": "contact@deepsounds.com",
+    "description": "Underground electronic music label",
+    "country": "US",
+    "user": {
+      "id": "...",
+      "name": "John Doe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+### Update a label
+
+Modify an existing label's information:
+
+```typescript
+PATCH /labels/:id
+
+{
+  "name": "Deep Sounds Records Ltd",
+  "description": "Premium underground electronic music",
+  "country": "gb"
+}
+```
+
+All fields are optional. Only provided fields will be updated.
+
+<Note>
+  The service validates that the label exists before updating. If not found, a `404 Not Found` error is returned.
+</Note>
+
+### Delete a label
+
+Remove a label from the catalog:
+
+```typescript
+DELETE /labels/:id
+```
+
+<Warning>
+  Deleting a label will cascade delete all associated releases due to the relationship configuration. Make sure to backup or reassign releases before deleting a label.
+</Warning>
+
+## Country codes
+
+Labels use ISO 3166-1 alpha-2 country codes. The system includes a comprehensive list of countries from the `countriesList` constant.
+
+### Common country codes
+
+<CardGroup cols={3}>
+  <Card title="United States" icon="flag-usa">
+    `US`
+  </Card>
+  <Card title="United Kingdom" icon="flag">
+    `GB`
+  </Card>
+  <Card title="Germany" icon="flag">
+    `DE`
+  </Card>
+  <Card title="France" icon="flag">
+    `FR`
+  </Card>
+  <Card title="Japan" icon="flag">
+    `JP`
+  </Card>
+  <Card title="Rwanda" icon="flag">
+    `RW` (default)
+  </Card>
+</CardGroup>
+
+<Note>
+  Country codes are automatically converted to uppercase when creating or updating a label.
+</Note>
+
+## Use cases
+
+### Independent label setup
+
+Create a label for your own releases:
+
+```typescript
+const label = await fetch('/labels', {
+  method: 'POST',
+  body: JSON.stringify({
+    name: 'My Records',
+    email: 'releases@myrecords.com',
+    country: 'us'
+  })
+});
+```
+
+### Sub-label management
+
+Create multiple labels for different genres or imprints:
+
+```typescript
+// Main label
+await createLabel({
+  name: 'Main Street Records',
+  description: 'Parent label for all releases'
+});
+
+// Sub-labels
+await createLabel({
+  name: 'Main Street Deep',
+  description: 'Deep house sub-label'
+});
+
+await createLabel({
+  name: 'Main Street Tech',
+  description: 'Techno sub-label'
+});
+```
+
+### Distribution organization
+
+Organize releases by label for distribution platforms:
+
+```typescript
+// Fetch all releases for a label
+const releases = await fetch(`/releases?labelId=${labelId}`);
+
+// Group by label for distribution submission
+const distributionData = {
+  label: await fetch(`/labels/${labelId}`),
+  releases: releases.data
+};
+```
+
+## Validation rules
+
+<AccordionGroup>
+  <Accordion title="Name validation" icon="signature">
+    - Required field
+    - Maximum 255 characters
+    - Must be a non-empty string
+  </Accordion>
+
+  <Accordion title="Email validation" icon="envelope">
+    - Optional field
+    - Must be a valid email format when provided
+    - Maximum 255 characters
+  </Accordion>
+
+  <Accordion title="Country validation" icon="globe">
+    - Must be a valid country code from the `countriesList`
+    - Automatically converted to uppercase
+    - Defaults to `RW` if not provided
+  </Accordion>
+
+  <Accordion title="User validation" icon="user">
+    - The `userId` must reference an existing user
+    - Validated during label creation
+    - Returns error if user not found
+  </Accordion>
+</AccordionGroup>
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Releases" icon="compact-disc" href="/features/releases">
+    Associate releases with labels
+  </Card>
+  <Card title="Artists" icon="user-music" href="/features/artists">
+    Manage artists on your label
+  </Card>
+  <Card title="Roles & Permissions" icon="shield" href="/features/roles-permissions">
+    Control label management access
+  </Card>
+</CardGroup>

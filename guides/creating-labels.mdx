@@ -1,0 +1,468 @@
+---
+title: Creating labels
+description: Set up and manage record labels to organize your music catalog
+---
+
+Labels help you organize artists and releases under a unified brand. This guide covers creating labels, managing label information, and organizing your catalog.
+
+## Prerequisites
+
+- An authenticated user account (see [Authentication](/guides/authentication))
+- A valid JWT token
+
+## Understanding labels
+
+Labels in Lens Music serve as organizational containers for:
+- Artists and their profiles
+- Music releases and albums
+- Catalog management and distribution
+
+Each label can have multiple artists and releases associated with it, making it easy to manage your music business.
+
+## Creating a label
+
+Set up a new record label in your catalog.
+
+<Steps>
+  <Step title="Prepare label information">
+    Gather the following details:
+    - **name** (required): The label's official name
+    - **email** (optional): Contact email for the label
+    - **description** (optional): Brief description of the label
+    - **country** (optional): Country where the label is based
+
+    <Note>
+      Labels are automatically associated with the authenticated user who creates them.
+    </Note>
+  </Step>
+
+  <Step title="Send create label request">
+    Make a POST request to the labels endpoint:
+
+    <CodeGroup>
+      ```bash cURL
+      curl -X POST https://api.lensmusic.com/labels \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "Midnight Records",
+          "email": "contact@midnightrecords.com",
+          "description": "Independent electronic music label",
+          "country": "US"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch('https://api.lensmusic.com/labels', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'Midnight Records',
+          email: 'contact@midnightrecords.com',
+          description: 'Independent electronic music label',
+          country: 'US'
+        })
+      });
+
+      const { data } = await response.json();
+      const labelId = data.id;
+      ```
+
+      ```python Python
+      import requests
+
+      headers = {
+          'Authorization': f'Bearer {token}',
+          'Content-Type': 'application/json'
+      }
+
+      payload = {
+          'name': 'Midnight Records',
+          'email': 'contact@midnightrecords.com',
+          'description': 'Independent electronic music label',
+          'country': 'US'
+      }
+
+      response = requests.post(
+          'https://api.lensmusic.com/labels',
+          headers=headers,
+          json=payload
+      )
+
+      label = response.json()['data']
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Handle the response">
+    On success, you'll receive the created label:
+
+    ```json
+    {
+      "message": "Label created successfully",
+      "data": {
+        "id": "uuid-string",
+        "name": "Midnight Records",
+        "email": "contact@midnightrecords.com",
+        "description": "Independent electronic music label",
+        "country": "US",
+        "userId": "user-uuid",
+        "createdAt": "2026-03-04T10:30:00Z",
+        "updatedAt": "2026-03-04T10:30:00Z"
+      }
+    }
+    ```
+
+    <Note>
+      Save the label `id` to associate artists and releases with this label.
+    </Note>
+  </Step>
+</Steps>
+
+## Fetching labels
+
+Retrieve your label catalog with pagination support.
+
+### List all labels
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET "https://api.lensmusic.com/labels?page=0&size=10" \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const response = await fetch(
+    'https://api.lensmusic.com/labels?page=0&size=10',
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  const { data } = await response.json();
+  // data contains labels array and pagination info
+  ```
+
+  ```python Python
+  response = requests.get(
+      'https://api.lensmusic.com/labels?page=0&size=10',
+      headers={'Authorization': f'Bearer {token}'}
+  )
+
+  labels = response.json()['data']
+  ```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "message": "Labels returned successfully",
+  "data": {
+    "items": [
+      {
+        "id": "label-uuid",
+        "name": "Midnight Records",
+        "email": "contact@midnightrecords.com",
+        "description": "Independent electronic music label",
+        "country": "US",
+        "createdAt": "2026-03-04T10:30:00Z"
+      }
+    ],
+    "total": 1,
+    "page": 0,
+    "size": 10
+  }
+}
+```
+
+### Get a specific label
+
+Retrieve details for a single label by ID:
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET https://api.lensmusic.com/labels/{labelId} \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const labelId = 'label-uuid';
+  const response = await fetch(
+    `https://api.lensmusic.com/labels/${labelId}`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+
+  const { data } = await response.json();
+  ```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "message": "Label found successfully",
+  "data": {
+    "id": "label-uuid",
+    "name": "Midnight Records",
+    "email": "contact@midnightrecords.com",
+    "description": "Independent electronic music label",
+    "country": "US",
+    "userId": "user-uuid",
+    "artists": [],
+    "releases": [],
+    "createdAt": "2026-03-04T10:30:00Z",
+    "updatedAt": "2026-03-04T10:30:00Z"
+  }
+}
+```
+
+## Updating labels
+
+Modify label information after creation.
+
+<Steps>
+  <Step title="Prepare update data">
+    You can update any of the following fields:
+    - **name**: Label name
+    - **email**: Contact email
+    - **description**: Label description
+    - **country**: Country code
+  </Step>
+
+  <Step title="Send update request">
+    <CodeGroup>
+      ```bash cURL
+      curl -X PATCH https://api.lensmusic.com/labels/{labelId} \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "Midnight Records International",
+          "description": "Global electronic music label"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const labelId = 'label-uuid';
+      const response = await fetch(
+        `https://api.lensmusic.com/labels/${labelId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: 'Midnight Records International',
+            description: 'Global electronic music label'
+          })
+        }
+      );
+      ```
+
+      ```python Python
+      label_id = 'label-uuid'
+      payload = {
+          'name': 'Midnight Records International',
+          'description': 'Global electronic music label'
+      }
+
+      response = requests.patch(
+          f'https://api.lensmusic.com/labels/{label_id}',
+          headers=headers,
+          json=payload
+      )
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Verify the update">
+    ```json
+    {
+      "message": "Label updated successfully",
+      "data": {
+        "id": "label-uuid",
+        "name": "Midnight Records International",
+        "email": "contact@midnightrecords.com",
+        "description": "Global electronic music label",
+        "country": "US",
+        "updatedAt": "2026-03-04T11:00:00Z"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Deleting labels
+
+Remove a label from your catalog.
+
+<CodeGroup>
+  ```bash cURL
+  curl -X DELETE https://api.lensmusic.com/labels/{labelId} \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const labelId = 'label-uuid';
+  const response = await fetch(
+    `https://api.lensmusic.com/labels/${labelId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  // Returns 204 No Content on success
+  ```
+
+  ```python Python
+  label_id = 'label-uuid'
+  response = requests.delete(
+      f'https://api.lensmusic.com/labels/{label_id}',
+      headers=headers
+  )
+  # Returns 204 on success
+  ```
+</CodeGroup>
+
+<Warning>
+  Deleting a label will also delete all associated artists and releases due to cascade deletion. This action cannot be undone.
+</Warning>
+
+## Organizing with labels
+
+Once you've created a label, you can associate artists and releases with it.
+
+### Adding artists to a label
+
+When creating or updating an artist, include the `labelId`:
+
+```javascript
+const response = await fetch('https://api.lensmusic.com/artists', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'The Midnight Collective',
+    labelId: 'label-uuid'  // Associate with label
+  })
+});
+```
+
+### Creating releases under a label
+
+When creating a release, specify the `labelId`:
+
+```javascript
+const response = await fetch('https://api.lensmusic.com/releases', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'Midnight Dreams',
+    releaseDate: '2026-06-01',
+    productionYear: 2026,
+    labelId: 'label-uuid'  // Associate with label
+  })
+});
+```
+
+## Pagination parameters
+
+Control how many labels are returned in list queries:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | integer | `0` | Zero-based page number |
+| `size` | integer | `10` | Number of labels per page |
+
+**Example:**
+
+```bash
+GET /labels?page=1&size=20
+```
+
+## Error handling
+
+<AccordionGroup>
+  <Accordion title="Label not found (404)">
+    ```json
+    {
+      "message": "Label not found"
+    }
+    ```
+
+    The label ID doesn't exist or has been deleted.
+  </Accordion>
+
+  <Accordion title="Invalid email format (400)">
+    ```json
+    {
+      "message": "Validation failed",
+      "errors": [
+        "email must be a valid email"
+      ]
+    }
+    ```
+
+    Ensure the email follows standard format: `user@domain.com`
+  </Accordion>
+
+  <Accordion title="Missing required fields (400)">
+    ```json
+    {
+      "message": "Validation failed",
+      "errors": [
+        "name should not be empty"
+      ]
+    }
+    ```
+
+    The `name` field is required when creating a label.
+  </Accordion>
+</AccordionGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Descriptive names" icon="tag">
+    Use clear, descriptive names for labels that reflect your brand or music genre.
+  </Card>
+
+  <Card title="Consistent metadata" icon="list-check">
+    Keep label information up-to-date, especially contact email and country.
+  </Card>
+
+  <Card title="Organized catalog" icon="folder-tree">
+    Group related artists and releases under the same label for better organization.
+  </Card>
+
+  <Card title="Backup label IDs" icon="bookmark">
+    Store label IDs in your application to easily reference them when creating artists and releases.
+  </Card>
+</CardGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Managing artists" icon="microphone" href="/guides/managing-artists">
+    Add artists to your label
+  </Card>
+  <Card title="Distributing releases" icon="compact-disc" href="/guides/distributing-releases">
+    Create releases under your label
+  </Card>
+</CardGroup>

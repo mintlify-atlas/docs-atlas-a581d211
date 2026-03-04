@@ -1,0 +1,331 @@
+---
+title: Monorepo structure
+description: Understanding the organization and architecture of the Lens Music codebase
+---
+
+Lens Music is organized as a monorepo containing both the backend API and frontend client applications. This structure allows for shared tooling, consistent versioning, and streamlined development workflows.
+
+## Repository overview
+
+The root directory contains two main workspaces:
+
+```
+lens-music/
+├── api/              # NestJS backend application
+├── client/           # React frontend application
+├── dev.sh           # Development startup script
+├── .gitignore
+└── README.md
+```
+
+<Note>
+  Each workspace (`api/` and `client/`) has its own `package.json`, dependencies, and build configuration, allowing them to be developed and deployed independently.
+</Note>
+
+## API directory structure
+
+The `api/` directory contains the NestJS backend application built with TypeScript and TypeORM.
+
+### Root level
+
+```
+api/
+├── src/                 # Source code
+├── dist/               # Compiled JavaScript (generated)
+├── node_modules/       # Dependencies (generated)
+├── package.json        # API dependencies and scripts
+├── tsconfig.json       # TypeScript configuration
+├── nodemon.json        # Development server configuration
+├── .env               # Environment variables (not committed)
+├── .env.example       # Environment variable template
+└── README.md
+```
+
+### Source directory (`api/src/`)
+
+<AccordionGroup>
+  <Accordion title="modules/" icon="folder">
+    Contains feature modules organized by domain:
+
+    - **artists/** - Artist management endpoints and services
+    - **auth/** - Authentication and authorization logic
+    - **labels/** - Record label management
+    - **lyrics/** - Track lyrics management
+    - **releases/** - Music release management
+    - **roles/** - Role and permission management
+    - **users/** - User account management
+
+    Each module typically contains:
+    - Controllers (handle HTTP requests)
+    - Services (business logic)
+    - DTOs (data transfer objects)
+  </Accordion>
+
+  <Accordion title="entities/" icon="database">
+    TypeORM entity definitions that map to database tables:
+
+    - `abstract.entity.ts` - Base entity with common fields
+    - `user.entity.ts` - User accounts
+    - `artist.entity.ts` - Artist profiles
+    - `label.entity.ts` - Record labels
+    - `release.entity.ts` - Music releases (albums, singles)
+    - `track.entity.ts` - Individual tracks
+    - `lyrics.entity.ts` - Track lyrics
+    - `role.entity.ts` - User roles
+    - `permission.entity.ts` - System permissions
+    - `rolePermission.entity.ts` - Role-permission mappings
+    - `releaseArtist.entity.ts` - Release-artist relationships
+
+    See [database schema](/development/database-schema) for detailed entity documentation.
+  </Accordion>
+
+  <Accordion title="common/" icon="box">
+    Shared utilities and cross-cutting concerns:
+
+    - **decorators/** - Custom TypeScript decorators
+    - **filters/** - Exception filters for error handling
+    - **guards/** - Authentication and authorization guards
+  </Accordion>
+
+  <Accordion title="constants/" icon="list">
+    Application constants and enums:
+
+    - Authentication roles and permissions
+    - Artist and user statuses
+    - Location data (countries, languages)
+  </Accordion>
+
+  <Accordion title="helpers/" icon="wrench">
+    Helper functions and utility classes for common operations throughout the application.
+  </Accordion>
+
+  <Accordion title="types/" icon="code">
+    TypeScript type definitions:
+
+    - **models/** - Interface definitions for data models
+    - Common types used across the application
+  </Accordion>
+
+  <Accordion title="seeds/" icon="seedling">
+    Database seeding scripts to populate initial data for development and testing.
+  </Accordion>
+
+  <Accordion title="utils/" icon="gear">
+    Utility functions and helper methods.
+  </Accordion>
+
+  <Accordion title="Configuration files" icon="file">
+    - `app.module.ts` - Root application module
+    - `main.ts` - Application entry point
+    - `data-source.ts` - TypeORM data source configuration
+  </Accordion>
+</AccordionGroup>
+
+## Client directory structure
+
+The `client/` directory contains the React frontend application built with Vite, TypeScript, and Tailwind CSS.
+
+### Root level
+
+```
+client/
+├── src/                    # Source code
+├── public/                 # Static assets
+├── node_modules/           # Dependencies (generated)
+├── dist/                  # Production build (generated)
+├── package.json           # Client dependencies and scripts
+├── vite.config.ts         # Vite configuration
+├── tsconfig.json          # TypeScript configuration
+├── components.json        # shadcn/ui configuration
+├── postcss.config.js      # PostCSS configuration
+├── index.html             # HTML entry point
+└── README.md
+```
+
+### Source directory (`client/src/`)
+
+<AccordionGroup>
+  <Accordion title="pages/" icon="browser">
+    Page components organized by feature:
+
+    - **landing/** - Landing page components
+    - **authentication/** - Login and registration pages
+    - **dashboard/** - Dashboard views
+    - **artists/** - Artist management pages
+    - **labels/** - Label management pages
+    - **releases/** - Release management pages
+    - **lyrics/** - Lyrics management pages
+    - **roles/** - Role and permission pages
+    - **common/** - Shared page components
+  </Accordion>
+
+  <Accordion title="components/" icon="cube">
+    Reusable React components:
+
+    - **ui/** - Base UI components (shadcn/ui)
+    - **layout/** - Layout components (header, sidebar, footer)
+    - **inputs/** - Form input components
+    - **modals/** - Modal dialogs
+    - **table/** - Table and data grid components
+    - **graphs/** - Chart and visualization components
+    - **feedbacks/** - Loading, error, and success states
+    - **text/** - Typography components
+    - **landing/** - Landing page specific components
+  </Accordion>
+
+  <Accordion title="state/" icon="database">
+    Redux state management:
+
+    - **api/** - RTK Query API definitions
+    - **features/** - Redux slices for different features
+    - Store configuration and setup
+  </Accordion>
+
+  <Accordion title="hooks/" icon="link">
+    Custom React hooks:
+
+    - **common/** - Shared hooks
+    - **labels/** - Label-related hooks
+    - **lyrics/** - Lyrics-related hooks
+    - **releases/** - Release-related hooks
+  </Accordion>
+
+  <Accordion title="types/" icon="code">
+    TypeScript type definitions:
+
+    - **models/** - Data model interfaces matching API entities
+    - Component prop types
+    - Utility types
+  </Accordion>
+
+  <Accordion title="constants/" icon="list">
+    Frontend constants including:
+
+    - API endpoints
+    - Route paths
+    - Configuration values
+  </Accordion>
+
+  <Accordion title="utils/" icon="gear">
+    Utility functions for:
+
+    - Data formatting
+    - Validation helpers
+    - API request helpers
+  </Accordion>
+
+  <Accordion title="containers/" icon="box">
+    Container components that connect pages to state management.
+  </Accordion>
+
+  <Accordion title="outlets/" icon="outlet">
+    React Router outlet components for nested routing.
+  </Accordion>
+
+  <Accordion title="lib/" icon="book">
+    Third-party library configurations and wrappers.
+  </Accordion>
+
+  <Accordion title="Root files" icon="file">
+    - `App.tsx` - Root application component
+    - `Router.tsx` - Application routing configuration
+    - `main.tsx` - Application entry point
+    - `index.css` - Global styles and Tailwind imports
+  </Accordion>
+</AccordionGroup>
+
+## Technology stack
+
+### Backend (API)
+
+<CardGroup cols={2}>
+  <Card title="NestJS" icon="code">
+    Progressive Node.js framework for building efficient server-side applications
+  </Card>
+  <Card title="TypeORM" icon="database">
+    Object-relational mapper for TypeScript and JavaScript
+  </Card>
+  <Card title="PostgreSQL" icon="elephant">
+    Powerful open-source relational database
+  </Card>
+  <Card title="JWT" icon="key">
+    JSON Web Tokens for authentication
+  </Card>
+</CardGroup>
+
+**Key dependencies:**
+- `@nestjs/core` - NestJS framework core
+- `@nestjs/typeorm` - TypeORM integration
+- `@nestjs/jwt` - JWT authentication
+- `bcrypt` - Password hashing
+- `class-validator` - Validation decorators
+- `pg` - PostgreSQL driver
+
+### Frontend (Client)
+
+<CardGroup cols={2}>
+  <Card title="React" icon="react">
+    Popular library for building user interfaces
+  </Card>
+  <Card title="Vite" icon="bolt">
+    Next-generation frontend build tool
+  </Card>
+  <Card title="Redux Toolkit" icon="cube">
+    State management with Redux made simple
+  </Card>
+  <Card title="Tailwind CSS" icon="paintbrush">
+    Utility-first CSS framework
+  </Card>
+</CardGroup>
+
+**Key dependencies:**
+- `react` & `react-dom` - React library
+- `@reduxjs/toolkit` - State management
+- `react-router-dom` - Client-side routing
+- `@radix-ui/*` - Accessible UI primitives
+- `tailwindcss` - Styling framework
+- `react-hook-form` - Form handling
+- `recharts` - Data visualization
+
+## Development workflow
+
+<Steps>
+  <Step title="Start development servers">
+    Run both API and client servers using `./dev.sh` or manually in separate terminals.
+  </Step>
+
+  <Step title="Make changes">
+    Edit files in either `api/src/` or `client/src/`. Both servers support hot reload.
+  </Step>
+
+  <Step title="Test locally">
+    The API runs on `http://localhost:8080` and the client on `http://localhost:5173`.
+  </Step>
+
+  <Step title="Build for production">
+    ```bash
+    # API
+    cd api && npm run build
+    
+    # Client
+    cd client && npm run build
+    ```
+  </Step>
+</Steps>
+
+## Related resources
+
+<CardGroup cols={2}>
+  <Card title="Development setup" icon="rocket" href="/development/setup">
+    Set up your local development environment
+  </Card>
+  <Card title="Database schema" icon="table" href="/development/database-schema">
+    Explore the database structure and relationships
+  </Card>
+  <Card title="Environment variables" icon="key" href="/development/environment-variables">
+    Configure your application settings
+  </Card>
+  <Card title="API reference" icon="code" href="/api/overview">
+    API endpoints and usage documentation
+  </Card>
+</CardGroup>

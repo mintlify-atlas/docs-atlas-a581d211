@@ -1,0 +1,485 @@
+---
+title: Roles & permissions
+description: Control access and manage user permissions with role-based security
+---
+
+The roles and permissions system provides fine-grained access control for your music platform. You can create custom roles, assign specific permissions, and control who can perform which actions.
+
+## Overview
+
+The access control system enables you to:
+
+<CardGroup cols={2}>
+  <Card title="Create roles" icon="shield">
+    Define custom roles for different user types
+  </Card>
+  <Card title="Assign permissions" icon="key">
+    Grant specific capabilities to each role
+  </Card>
+  <Card title="User management" icon="users">
+    Control user access across the platform
+  </Card>
+  <Card title="Audit trail" icon="clock-rotate-left">
+    Track who created roles and permissions
+  </Card>
+</CardGroup>
+
+## Architecture
+
+The system uses a many-to-many relationship between roles and permissions through a join entity:
+
+```
+User → Role → RolePermission ← Permission
+```
+
+This architecture allows:
+- One role to have multiple permissions
+- One permission to be assigned to multiple roles
+- Flexible permission combinations
+- Easy role updates without affecting users
+
+## Role entity structure
+
+The `Role` entity represents user roles:
+
+```typescript
+@Entity('roles')
+@Unique(['name'])
+export class Role extends AbstractEntity {
+  // NAME
+  @Column({ name: 'name', nullable: false })
+  name!: string;
+
+  // DESCRIPTION
+  @Column({ name: 'description', nullable: true })
+  description: string;
+
+  // CREATED BY ID
+  @Column({ name: 'created_by_id', nullable: false, type: 'uuid' })
+  createdById: UUID;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.createdRoles)
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: User;
+
+  @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
+  permissions: RolePermission[];
+}
+```
+
+### Role fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `name` | string | Yes | Unique role name |
+| `description` | string | No | Optional role description |
+| `createdById` | UUID | Yes | Reference to user who created the role |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+<Note>
+  Role names must be unique. Attempting to create a role with an existing name will fail.
+</Note>
+
+## Permission entity structure
+
+The `Permission` entity represents individual capabilities:
+
+```typescript
+@Entity('permissions')
+@Unique(['name'])
+export class Permission extends AbstractEntity {
+  // NAME
+  @Column({ name: 'name', nullable: false })
+  name!: string;
+
+  // DESCRIPTION
+  @Column({ name: 'description', nullable: true })
+  description: string;
+
+  // Relations
+  @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)
+  roles: RolePermission[];
+}
+```
+
+### Permission fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `name` | string | Yes | Unique permission name |
+| `description` | string | No | Optional permission description |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+### System permissions
+
+The system defines these core permissions:
+
+```typescript
+export enum PERMISSIONS {
+    CREATE_USER = 'CREATE_USER',
+    READ_USER = 'READ_USER',
+    UPDATE_USER = 'UPDATE_USER',
+    DELETE_USER = 'DELETE_USER',
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="CREATE_USER" icon="user-plus">
+    Ability to create new user accounts
+  </Card>
+  <Card title="READ_USER" icon="eye">
+    Ability to view user information
+  </Card>
+  <Card title="UPDATE_USER" icon="pen-to-square">
+    Ability to modify user details
+  </Card>
+  <Card title="DELETE_USER" icon="trash">
+    Ability to delete user accounts
+  </Card>
+</CardGroup>
+
+<Note>
+  You can extend the permissions system by adding more permission constants for other resources like artists, labels, and releases.
+</Note>
+
+## RolePermission join entity
+
+The `RolePermission` entity connects roles to permissions:
+
+```typescript
+@Entity('role_permissions')
+@Unique(['roleId', 'permissionId'])
+export class RolePermission extends AbstractEntity {
+  // ROLE ID
+  @Column({ name: 'role_id', nullable: false, type: 'uuid' })
+  roleId!: UUID;
+
+  // PERMISSION ID
+  @Column({ name: 'permission_id', nullable: false, type: 'uuid' })
+  permissionId!: UUID;
+
+  // CREATED BY ID
+  @Column({ name: 'created_by_id', nullable: true, type: 'uuid' })
+  createdById: UUID;
+
+  // Relations
+  @ManyToOne(() => Role, (role) => role.permissions)
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
+
+  @ManyToOne(() => Permission, (permission) => permission.roles)
+  @JoinColumn({ name: 'permission_id' })
+  permission: Permission;
+
+  @ManyToOne(() => User, (user) => user.createdRolePermissions)
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: User;
+}
+```
+
+### Join entity fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `roleId` | UUID | Yes | Reference to role |
+| `permissionId` | UUID | Yes | Reference to permission |
+| `createdById` | UUID | No | Reference to user who created the assignment |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+<Warning>
+  The combination of `roleId` and `permissionId` must be unique. You cannot assign the same permission to a role twice.
+</Warning>
+
+## Common workflows
+
+### Create a custom role
+
+Define a new role for your platform:
+
+```typescript
+const role = await createRole({
+  name: 'Label Manager',
+  description: 'Can manage label artists and releases',
+  createdById: currentUser.id
+});
+```
+
+### Assign permissions to role
+
+Grant specific permissions to a role:
+
+```typescript
+// Give the Label Manager role user read access
+await createRolePermission({
+  roleId: role.id,
+  permissionId: permissions.READ_USER,
+  createdById: currentUser.id
+});
+
+// Add more permissions
+await createRolePermission({
+  roleId: role.id,
+  permissionId: permissions.UPDATE_USER,
+  createdById: currentUser.id
+});
+```
+
+### Check user permissions
+
+Verify if a user has specific permissions:
+
+```typescript
+function hasPermission(user: User, permissionName: string): boolean {
+  return user.role.permissions.some(
+    rp => rp.permission.name === permissionName
+  );
+}
+
+// Usage
+if (hasPermission(user, 'CREATE_USER')) {
+  // Allow user creation
+}
+```
+
+## Pre-defined roles
+
+The system includes a built-in role structure:
+
+<AccordionGroup>
+  <Accordion title="Admin role" icon="crown">
+    Administrators have unrestricted access to all resources:
+
+    ```typescript
+    // From auth.constant.ts
+    export const ROLES = {
+      ADMIN: 'admin',
+      USER: 'user'
+    };
+    ```
+
+    Admin capabilities:
+    - View all artists regardless of status
+    - Access any user's data
+    - Bypass ownership checks
+    - Manage system-wide settings
+  </Accordion>
+
+  <Accordion title="User role" icon="user">
+    Regular users have restricted access:
+
+    - Can only view their own data
+    - Can only see active artists
+    - Cannot access other users' resources
+    - Limited to standard CRUD operations on owned entities
+  </Accordion>
+</AccordionGroup>
+
+## Use cases
+
+### Artist manager role
+
+Create a role for users who manage artists:
+
+```typescript
+// 1. Create the role
+const artistManager = await createRole({
+  name: 'Artist Manager',
+  description: 'Manages artists and their releases'
+});
+
+// 2. Assign relevant permissions
+await assignPermissions(artistManager.id, [
+  'READ_USER',
+  'CREATE_ARTIST',
+  'UPDATE_ARTIST',
+  'READ_ARTIST',
+  'CREATE_RELEASE',
+  'UPDATE_RELEASE'
+]);
+```
+
+### Label administrator role
+
+Create a role for label admins:
+
+```typescript
+const labelAdmin = await createRole({
+  name: 'Label Administrator',
+  description: 'Full control over label and its releases'
+});
+
+await assignPermissions(labelAdmin.id, [
+  'CREATE_LABEL',
+  'UPDATE_LABEL',
+  'DELETE_LABEL',
+  'CREATE_RELEASE',
+  'UPDATE_RELEASE',
+  'DELETE_RELEASE',
+  'CREATE_ARTIST',
+  'UPDATE_ARTIST'
+]);
+```
+
+### Read-only analyst role
+
+Create a role for users who can view but not modify:
+
+```typescript
+const analyst = await createRole({
+  name: 'Analyst',
+  description: 'Read-only access to all data'
+});
+
+await assignPermissions(analyst.id, [
+  'READ_USER',
+  'READ_ARTIST',
+  'READ_LABEL',
+  'READ_RELEASE',
+  'READ_LYRICS'
+]);
+```
+
+### Temporary permissions
+
+Grant time-limited access by creating and revoking role permissions:
+
+```typescript
+// Grant permission for collaboration
+const tempPermission = await createRolePermission({
+  roleId: collaboratorRole.id,
+  permissionId: permissions.UPDATE_RELEASE,
+  createdById: admin.id
+});
+
+// Later, revoke the permission
+await deleteRolePermission(tempPermission.id);
+```
+
+## Guard implementation
+
+The system uses guards to enforce permissions:
+
+### JWT Auth Guard
+
+Validates authentication:
+
+```typescript
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+@Controller('artists')
+@UseGuards(JwtAuthGuard)
+export class ArtistsController {
+  // All endpoints require authentication
+}
+```
+
+### Roles Guard
+
+Validates role-based access:
+
+```typescript
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AdminController {
+  @Get('users')
+  @Roles('admin')
+  async getAllUsers() {
+    // Only admin users can access
+  }
+}
+```
+
+### Current User Decorator
+
+Extract authenticated user from request:
+
+```typescript
+import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
+
+@Get('my-artists')
+async getMyArtists(@CurrentUser() user: AuthUser) {
+  return this.artistService.fetchArtists({
+    condition: { userId: user.id }
+  });
+}
+```
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Principle of least privilege" icon="shield-halved">
+    Grant only the minimum permissions necessary for each role
+  </Card>
+  <Card title="Role naming" icon="tag">
+    Use clear, descriptive names that indicate the role's purpose
+  </Card>
+  <Card title="Permission groups" icon="layer-group">
+    Group related permissions together for easier management
+  </Card>
+  <Card title="Regular audits" icon="magnifying-glass">
+    Periodically review and update role permissions
+  </Card>
+  <Card title="Document roles" icon="book">
+    Maintain clear documentation of what each role can do
+  </Card>
+  <Card title="Test permissions" icon="vial">
+    Always test role changes in a non-production environment
+  </Card>
+</CardGroup>
+
+## Extending the system
+
+You can extend the permissions system for other resources:
+
+```typescript
+// Add new permissions for artists
+export enum ARTIST_PERMISSIONS {
+  CREATE_ARTIST = 'CREATE_ARTIST',
+  READ_ARTIST = 'READ_ARTIST',
+  UPDATE_ARTIST = 'UPDATE_ARTIST',
+  DELETE_ARTIST = 'DELETE_ARTIST',
+  ACTIVATE_ARTIST = 'ACTIVATE_ARTIST',
+  DEACTIVATE_ARTIST = 'DEACTIVATE_ARTIST',
+}
+
+// Add new permissions for labels
+export enum LABEL_PERMISSIONS {
+  CREATE_LABEL = 'CREATE_LABEL',
+  READ_LABEL = 'READ_LABEL',
+  UPDATE_LABEL = 'UPDATE_LABEL',
+  DELETE_LABEL = 'DELETE_LABEL',
+}
+
+// Add new permissions for releases
+export enum RELEASE_PERMISSIONS {
+  CREATE_RELEASE = 'CREATE_RELEASE',
+  READ_RELEASE = 'READ_RELEASE',
+  UPDATE_RELEASE = 'UPDATE_RELEASE',
+  DELETE_RELEASE = 'DELETE_RELEASE',
+  PUBLISH_RELEASE = 'PUBLISH_RELEASE',
+}
+```
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Artists" icon="user-music" href="/features/artists">
+    Role-based access control for artist management
+  </Card>
+  <Card title="Labels" icon="building" href="/features/labels">
+    Permission control for label operations
+  </Card>
+  <Card title="Releases" icon="compact-disc" href="/features/releases">
+    Secure release management with roles
+  </Card>
+</CardGroup>

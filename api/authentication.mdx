@@ -1,0 +1,115 @@
+---
+title: Authentication
+description: Learn how to authenticate with the Lens Music API using JWT tokens
+---
+
+The Lens Music API uses JSON Web Tokens (JWT) for authentication. You need to obtain an access token by signing up or logging in, then include this token in subsequent requests.
+
+## Authentication flow
+
+1. **Sign up** or **login** to obtain an access token
+2. Include the token in the `Authorization` header for protected endpoints
+3. The token expires after a set period (typically 24 hours)
+
+## Obtaining tokens
+
+### Sign up
+
+Create a new user account and receive an access token:
+
+```bash
+curl -X POST https://your-domain.com/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "name": "John Doe",
+    "password": "securePassword123",
+    "phone": "+1234567890"
+  }'
+```
+
+### Login
+
+Login with existing credentials:
+
+```bash
+curl -X POST https://your-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securePassword123"
+  }'
+```
+
+Both endpoints return:
+
+```json
+{
+  "message": "You have logged in successfully!",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "phone": "+1234567890",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+## Using tokens
+
+Include the access token in the `Authorization` header for all protected endpoints:
+
+```bash
+curl -X GET https://your-domain.com/api/artists \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### JavaScript example
+
+```javascript
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+const response = await fetch('https://your-domain.com/api/artists', {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+## Token expiration
+
+Access tokens expire after a configured period. When a token expires, you'll receive a `401 Unauthorized` response. You need to login again to obtain a new token.
+
+## Authorization levels
+
+The API supports role-based access control with the following roles:
+
+- **user** - Standard user with access to their own resources
+- **admin** - Administrator with elevated permissions
+- **SUPER_ADMIN** - Super administrator with full access
+
+Certain endpoints require specific roles. For example, deleting users requires the `admin` role.
+
+## Protected endpoints
+
+All endpoints except `/api/auth/signup` and `/api/auth/login` require authentication. Some endpoints have additional role requirements:
+
+- `DELETE /api/users/:id` - Requires `admin` role
+- Artist management - Users can only manage their own active artists unless they're an admin
+
+## Security best practices
+
+- Never share your access tokens
+- Store tokens securely (use environment variables or secure storage)
+- Implement token refresh logic in your application
+- Use HTTPS for all API requests
+- Rotate passwords regularly

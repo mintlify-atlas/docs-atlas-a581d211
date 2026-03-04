@@ -1,0 +1,297 @@
+---
+title: Environment variables
+description: Configuration options for the Lens Music API server
+---
+
+Environment variables control the behavior of the Lens Music API server. These variables configure database connections, server settings, and application behavior.
+
+## Configuration file
+
+Environment variables are stored in a `.env` file in the `api/` directory. This file is excluded from version control for security reasons.
+
+<Steps>
+  <Step title="Copy the example file">
+    ```bash
+    cd api
+    cp .env.example .env
+    ```
+  </Step>
+
+  <Step title="Edit the configuration">
+    Open `.env` in your text editor and set the appropriate values for your environment.
+  </Step>
+
+  <Step title="Restart the server">
+    Changes to environment variables require restarting the API server to take effect.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit your `.env` file to version control. It may contain sensitive information like database credentials and API keys.
+</Warning>
+
+## Available variables
+
+The following environment variables are available in the Lens Music API:
+
+### Server configuration
+
+<ParamField path="NODE_ENV" type="string" required>
+  Specifies the environment the application is running in.
+
+  **Accepted values:**
+  - `development` - Development mode with debug logging
+  - `production` - Production mode with optimized settings
+  - `test` - Testing environment
+
+  **Default:** `development`
+
+  ```bash .env
+  NODE_ENV=development
+  ```
+</ParamField>
+
+<ParamField path="PORT" type="number" required>
+  The port number on which the API server listens for incoming requests.
+
+  **Default:** `8080`
+
+  ```bash .env
+  PORT=8080
+  ```
+
+  <Note>
+    Make sure this port is available and not blocked by your firewall. The client application expects the API to be running on this port.
+  </Note>
+</ParamField>
+
+### Database configuration
+
+The API uses PostgreSQL for data persistence. All database variables are required for the application to function.
+
+<ParamField path="DB_HOST" type="string" required>
+  The hostname or IP address of your PostgreSQL server.
+
+  **Common values:**
+  - `localhost` - For local development
+  - `127.0.0.1` - Alternative to localhost
+  - `db` - Common in Docker Compose setups
+  - Remote host address for production
+
+  ```bash .env
+  DB_HOST=localhost
+  ```
+</ParamField>
+
+<ParamField path="DB_PORT" type="number" required>
+  The port number on which PostgreSQL is listening.
+
+  **Default PostgreSQL port:** `5432`
+
+  ```bash .env
+  DB_PORT=5432
+  ```
+</ParamField>
+
+<ParamField path="DB_USER" type="string" required>
+  The PostgreSQL username for database authentication.
+
+  ```bash .env
+  DB_USER=lens_music_user
+  ```
+
+  <Warning>
+    For production, create a dedicated database user with limited permissions rather than using the `postgres` superuser.
+  </Warning>
+</ParamField>
+
+<ParamField path="DB_PASSWORD" type="string" required>
+  The password for the PostgreSQL user.
+
+  ```bash .env
+  DB_PASSWORD=your_secure_password
+  ```
+
+  <Note>
+    Use a strong password for production environments. Consider using environment-specific secrets management services.
+  </Note>
+</ParamField>
+
+<ParamField path="DB_NAME" type="string" required>
+  The name of the PostgreSQL database to connect to.
+
+  ```bash .env
+  DB_NAME=lens_music
+  ```
+
+  The database must exist before starting the API server. Create it using:
+
+  ```bash
+  psql -U your_postgres_user -c "CREATE DATABASE lens_music;"
+  ```
+</ParamField>
+
+## Example configurations
+
+Here are example configurations for different environments:
+
+<CodeGroup>
+
+```bash Development
+NODE_ENV=development
+PORT=8080
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=lens_music_dev
+```
+
+```bash Production
+NODE_ENV=production
+PORT=8080
+
+DB_HOST=your-db-host.com
+DB_PORT=5432
+DB_USER=lens_music_user
+DB_PASSWORD=your_secure_production_password
+DB_NAME=lens_music_prod
+```
+
+```bash Docker Compose
+NODE_ENV=development
+PORT=8080
+
+DB_HOST=db
+DB_PORT=5432
+DB_USER=lens_music
+DB_PASSWORD=lens_music
+DB_NAME=lens_music
+```
+
+```bash Testing
+NODE_ENV=test
+PORT=8081
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=lens_music_test
+```
+
+</CodeGroup>
+
+## Database connection
+
+The API uses TypeORM to manage database connections. The connection is configured in `api/src/data-source.ts` using the environment variables.
+
+### Connection features
+
+<AccordionGroup>
+  <Accordion title="Automatic synchronization" icon="sync">
+    In development mode (`NODE_ENV=development`), TypeORM automatically synchronizes the database schema with your entity definitions. This means:
+
+    - Tables are created automatically
+    - Columns are added when entities change
+    - Relationships are established
+
+    <Warning>
+      Automatic synchronization is disabled in production to prevent accidental data loss. Use migrations for production schema changes.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Connection pooling" icon="layer-group">
+    TypeORM uses connection pooling to efficiently manage database connections. Multiple API requests can reuse existing connections, improving performance.
+  </Accordion>
+
+  <Accordion title="Entity discovery" icon="magnifying-glass">
+    The API automatically discovers and registers all entity files in `api/src/entities/`.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection refused error" icon="circle-xmark">
+    If you see "Connection refused" errors:
+
+    1. Verify PostgreSQL is running:
+       ```bash
+       sudo systemctl status postgresql
+       ```
+
+    2. Check that the host and port are correct
+
+    3. Ensure PostgreSQL is configured to accept connections from your host
+
+    4. Verify firewall rules allow connections to the PostgreSQL port
+  </Accordion>
+
+  <Accordion title="Authentication failed error" icon="key">
+    If you see "Authentication failed" errors:
+
+    1. Verify your username and password are correct
+
+    2. Check that the user has permission to access the database:
+       ```sql
+       GRANT ALL PRIVILEGES ON DATABASE lens_music TO your_user;
+       ```
+
+    3. Verify PostgreSQL's authentication method in `pg_hba.conf`
+  </Accordion>
+
+  <Accordion title="Database does not exist error" icon="database">
+    If you see "Database does not exist" errors:
+
+    1. Create the database:
+       ```bash
+       psql -U postgres -c "CREATE DATABASE lens_music;"
+       ```
+
+    2. Verify the `DB_NAME` variable matches your database name
+  </Accordion>
+
+  <Accordion title="Port already in use error" icon="plug">
+    If the API port is already in use:
+
+    1. Check what's using the port:
+       ```bash
+       lsof -i :8080
+       ```
+
+    2. Either stop the conflicting process or change the `PORT` variable to an available port
+  </Accordion>
+</AccordionGroup>
+
+## Security best practices
+
+<CardGroup cols={2}>
+  <Card title="Never commit .env files" icon="shield-xmark">
+    Keep `.env` files out of version control. The `.gitignore` file already excludes them.
+  </Card>
+  <Card title="Use strong passwords" icon="lock">
+    Generate strong, unique passwords for database users, especially in production.
+  </Card>
+  <Card title="Restrict database access" icon="user-lock">
+    Create dedicated database users with minimal required permissions.
+  </Card>
+  <Card title="Rotate credentials regularly" icon="rotate">
+    Update passwords and credentials periodically, especially after team member changes.
+  </Card>
+</CardGroup>
+
+## Related resources
+
+<CardGroup cols={2}>
+  <Card title="Development setup" icon="rocket" href="/development/setup">
+    Complete guide to setting up your environment
+  </Card>
+  <Card title="Database schema" icon="table" href="/development/database-schema">
+    Learn about the database structure
+  </Card>
+  <Card title="Monorepo structure" icon="folder-tree" href="/development/monorepo-structure">
+    Understand the codebase organization
+  </Card>
+</CardGroup>

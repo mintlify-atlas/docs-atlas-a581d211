@@ -1,0 +1,264 @@
+---
+title: Artists
+description: Manage artists and their releases in your music catalog
+---
+
+Artists represent the creators and performers in your music catalog. Each artist can be associated with multiple releases and tracks, allowing you to organize your music library by performer.
+
+## Overview
+
+The artist management system enables you to:
+
+<CardGroup cols={2}>
+  <Card title="Create artists" icon="user-plus">
+    Add new artists to your catalog with names and status
+  </Card>
+  <Card title="Track releases" icon="compact-disc">
+    Link artists to their releases and manage collaborations
+  </Card>
+  <Card title="Manage status" icon="toggle-on">
+    Control artist visibility with active/inactive status
+  </Card>
+  <Card title="User ownership" icon="user-lock">
+    Associate artists with specific user accounts
+  </Card>
+</CardGroup>
+
+## Artist entity structure
+
+The `Artist` entity contains the following fields:
+
+```typescript
+@Entity('artists')
+export class Artist extends AbstractEntity {
+  // NAME
+  @Column({ name: 'name', nullable: false })
+  name!: string;
+
+  // STATUS
+  @Column({
+    name: 'status',
+    nullable: false,
+    type: 'enum',
+    enum: ['active', 'inactive'],
+    default: 'active',
+  })
+  status!: string;
+
+  // USER ID
+  @Column({ name: 'user_id', nullable: false })
+  userId!: string;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.artists)
+  user!: User;
+
+  @OneToMany(() => ReleaseArtist, (releaseArtist) => releaseArtist.artist)
+  releases: ReleaseArtist[];
+}
+```
+
+### Core fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `name` | string | Yes | Artist's display name |
+| `status` | enum | Yes | Either `active` or `inactive` (default: `active`) |
+| `userId` | UUID | Yes | Reference to the owning user |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+### Relationships
+
+<AccordionGroup>
+  <Accordion title="User relationship" icon="user">
+    Each artist belongs to a single user. When the user is deleted, all their artists are cascade deleted.
+
+    ```typescript
+    @ManyToOne(() => User, (user) => user.artists, {
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+    })
+    ```
+  </Accordion>
+
+  <Accordion title="Release relationship" icon="compact-disc">
+    Artists connect to releases through the `ReleaseArtist` join entity, enabling many-to-many relationships for collaborations.
+
+    ```typescript
+    @OneToMany(() => ReleaseArtist, (releaseArtist) => releaseArtist.artist)
+    releases: ReleaseArtist[];
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common operations
+
+### Create an artist
+
+Create a new artist in your catalog:
+
+```typescript
+POST /artists
+
+{
+  "name": "John Doe",
+  "status": "active" // optional, defaults to 'active'
+}
+```
+
+<Note>
+  The `userId` is automatically set from the authenticated user's context. You don't need to provide it in the request body.
+</Note>
+
+### Fetch artists
+
+Retrieve artists with pagination and optional filtering:
+
+```typescript
+GET /artists?page=0&size=10&labelId=<uuid>
+```
+
+**Query parameters:**
+- `page` - Page number (default: 0)
+- `size` - Items per page (default: 10)
+- `labelId` - Optional filter by label
+
+<Tabs>
+  <Tab title="Regular users">
+    Regular users can only see their own artists with `active` status.
+
+    ```typescript
+    // Automatically filtered by:
+    {
+      userId: user.id,
+      status: 'active'
+    }
+    ```
+  </Tab>
+  <Tab title="Admin users">
+    Admin users can see all artists regardless of status or ownership.
+
+    ```typescript
+    // No automatic filtering applied
+    ```
+  </Tab>
+</Tabs>
+
+### Get artist by ID
+
+Retrieve a specific artist's details:
+
+```typescript
+GET /artists/:id
+```
+
+<Warning>
+  Non-admin users cannot access artists with `inactive` status, even if they own them. This request will return a `403 Forbidden` error.
+</Warning>
+
+### Update an artist
+
+Modify an existing artist's information:
+
+```typescript
+PATCH /artists/:id
+
+{
+  "name": "Jane Smith",
+  "status": "inactive"
+}
+```
+
+Both fields are optional. Only provided fields will be updated.
+
+### Delete an artist
+
+Remove an artist from the catalog:
+
+```typescript
+DELETE /artists/:id
+```
+
+<Warning>
+  Deleting an artist will cascade delete all associated `ReleaseArtist` records due to the relationship configuration.
+</Warning>
+
+## Status management
+
+Artists can have one of two statuses:
+
+<CardGroup cols={2}>
+  <Card title="Active" icon="circle-check" color="#10b981">
+    Artist is visible and accessible to all users. This is the default status.
+  </Card>
+  <Card title="Inactive" icon="circle-xmark" color="#ef4444">
+    Artist is hidden from regular users. Only admins can view and manage inactive artists.
+  </Card>
+</CardGroup>
+
+You can use the `inactive` status to:
+- Temporarily hide artists without deleting them
+- Archive retired or discontinued artists
+- Manage artists pending approval or review
+
+## Use cases
+
+### Solo artist catalog
+
+Create a single artist for your personal music:
+
+```typescript
+const artist = await fetch('/artists', {
+  method: 'POST',
+  body: JSON.stringify({
+    name: 'DJ Producer'
+  })
+});
+```
+
+### Collaboration management
+
+Link multiple artists to a single release:
+
+```typescript
+// Create release
+const release = await createRelease({
+  title: 'Collaboration EP',
+  // ... other fields
+});
+
+// Link artists via ReleaseArtist entity
+await createReleaseArtist({
+  releaseId: release.id,
+  artistId: artist1.id
+});
+
+await createReleaseArtist({
+  releaseId: release.id,
+  artistId: artist2.id
+});
+```
+
+### Label roster management
+
+Filter artists by label to view your roster:
+
+```typescript
+GET /artists?labelId=<label-uuid>&size=50
+```
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Releases" icon="compact-disc" href="/features/releases">
+    Link artists to albums and singles
+  </Card>
+  <Card title="Labels" icon="building" href="/features/labels">
+    Manage artist rosters under labels
+  </Card>
+  <Card title="Roles & Permissions" icon="shield" href="/features/roles-permissions">
+    Control artist management access
+  </Card>
+</CardGroup>

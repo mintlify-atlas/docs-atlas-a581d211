@@ -1,0 +1,273 @@
+---
+title: Lyrics endpoints
+description: Manage track lyrics and synchronized text
+---
+
+The lyrics endpoints allow you to create and retrieve lyrics for music tracks. All endpoints require JWT authentication.
+
+## Create lyrics
+
+`POST /api/lyrics`
+
+Create lyrics for a track. Lyrics can include synchronized timestamps for karaoke-style display.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Request body
+
+<ParamField body="trackId" type="string" required>
+  UUID of the track these lyrics belong to
+</ParamField>
+
+<ParamField body="content" type="array" required>
+  Array of lyric line objects. Each object should have:
+  - `text` (string, required): The lyric text
+  - `time` (string, optional): Timestamp in format "mm:ss.ms" for synchronized lyrics
+</ParamField>
+
+<ParamField body="language" type="string">
+  Language code (e.g., 'en', 'es', 'fr'). Defaults to 'en'
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Lyrics created successfully"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created lyrics object
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://your-domain.com/api/lyrics \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trackId": "d4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a",
+    "content": [
+      {"time": "00:00.00", "text": "Walking down the midnight street"},
+      {"time": "00:05.50", "text": "City lights beneath my feet"},
+      {"text": "Feeling the rhythm of the night"}
+    ],
+    "language": "en"
+  }'
+```
+
+```javascript
+const response = await fetch('https://your-domain.com/api/lyrics', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    trackId: 'd4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a',
+    content: [
+      { time: '00:00.00', text: 'Walking down the midnight street' },
+      { time: '00:05.50', text: 'City lights beneath my feet' },
+      { text: 'Feeling the rhythm of the night' }
+    ],
+    language: 'en'
+  })
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Lyrics created successfully",
+  "data": {
+    "id": "e5f6a7b8-c9d0-4e5f-8a7b-9c8d7e6f5a4b",
+    "trackId": "d4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a",
+    "content": [
+      { "time": "00:00.00", "text": "Walking down the midnight street" },
+      { "time": "00:05.50", "text": "City lights beneath my feet" },
+      { "text": "Feeling the rhythm of the night" }
+    ],
+    "language": "en",
+    "createdAt": "2024-03-04T10:00:00.000Z",
+    "updatedAt": "2024-03-04T10:00:00.000Z"
+  }
+}
+```
+
+## List lyrics
+
+`GET /api/lyrics`
+
+Retrieve a paginated list of lyrics. You can filter by track ID.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Query parameters
+
+<ParamField query="size" type="number" default="10">
+  Number of lyrics per page
+</ParamField>
+
+<ParamField query="page" type="number" default="0">
+  Page number (zero-indexed)
+</ParamField>
+
+<ParamField query="trackId" type="string">
+  Filter lyrics by track ID
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Lyrics fetched successfully"
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of lyrics objects
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X GET "https://your-domain.com/api/lyrics?trackId=d4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript
+const params = new URLSearchParams({
+  size: '20',
+  page: '0',
+  trackId: 'd4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a'
+});
+
+const response = await fetch(`https://your-domain.com/api/lyrics?${params}`, {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Lyrics fetched successfully",
+  "data": [
+    {
+      "id": "e5f6a7b8-c9d0-4e5f-8a7b-9c8d7e6f5a4b",
+      "trackId": "d4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a",
+      "content": [
+        { "time": "00:00.00", "text": "Walking down the midnight street" },
+        { "time": "00:05.50", "text": "City lights beneath my feet" }
+      ],
+      "language": "en",
+      "createdAt": "2024-03-04T10:00:00.000Z",
+      "updatedAt": "2024-03-04T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+## Get lyrics by ID
+
+`GET /api/lyrics/:id`
+
+Retrieve specific lyrics by ID.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier (UUID) of the lyrics
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Lyrics fetched successfully"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The lyrics object
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X GET https://your-domain.com/api/lyrics/e5f6a7b8-c9d0-4e5f-8a7b-9c8d7e6f5a4b \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript
+const lyricsId = 'e5f6a7b8-c9d0-4e5f-8a7b-9c8d7e6f5a4b';
+
+const response = await fetch(`https://your-domain.com/api/lyrics/${lyricsId}`, {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Lyrics fetched successfully",
+  "data": {
+    "id": "e5f6a7b8-c9d0-4e5f-8a7b-9c8d7e6f5a4b",
+    "trackId": "d4e5f6a7-b8c9-4d5e-8f7a-9b8c7d6e5f4a",
+    "content": [
+      { "time": "00:00.00", "text": "Walking down the midnight street" },
+      { "time": "00:05.50", "text": "City lights beneath my feet" },
+      { "text": "Feeling the rhythm of the night" }
+    ],
+    "language": "en",
+    "createdAt": "2024-03-04T10:00:00.000Z",
+    "updatedAt": "2024-03-04T10:00:00.000Z"
+  }
+}
+```
+
+## Lyrics object structure
+
+<ResponseField name="id" type="string">
+  Unique lyrics identifier (UUID)
+</ResponseField>
+
+<ResponseField name="trackId" type="string">
+  ID of the associated track
+</ResponseField>
+
+<ResponseField name="content" type="array">
+  Array of lyric line objects stored as JSONB. Each object contains:
+  - `text` (string): The lyric text
+  - `time` (string, optional): Timestamp for synchronized playback
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Language code (ISO 639-1 format, e.g., 'en', 'es', 'fr')
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the lyrics were created (ISO 8601)
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Timestamp when the lyrics were last updated (ISO 8601)
+</ResponseField>
+
+## Notes
+
+- The `content` field is stored as JSONB in the database, allowing flexible structure
+- Timestamps in the `time` field should follow the format "mm:ss.ms" (e.g., "01:23.45")
+- Not all lyric lines require timestamps - you can mix timestamped and non-timestamped lines
+- Each track can have multiple lyrics entries in different languages
+- Lyrics are deleted when the associated track is deleted

@@ -1,0 +1,224 @@
+---
+title: Development setup
+description: Set up your local development environment for Lens Music
+---
+
+Get started with developing Lens Music by setting up the monorepo on your local machine. This guide walks you through installing prerequisites, configuring environment variables, and running the development servers.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    Version 18.x or higher recommended
+  </Card>
+  <Card title="PostgreSQL" icon="database">
+    Version 14.x or higher for the database
+  </Card>
+  <Card title="npm" icon="box">
+    Comes with Node.js installation
+  </Card>
+  <Card title="Git" icon="code-branch">
+    For version control and cloning the repository
+  </Card>
+</CardGroup>
+
+## Clone the repository
+
+Start by cloning the Lens Music repository to your local machine:
+
+```bash
+git clone https://github.com/lens-ltd/lens-music
+cd lens-music
+```
+
+## Configure environment variables
+
+The API requires environment variables to connect to the database and configure the server.
+
+<Steps>
+  <Step title="Create environment file">
+    Navigate to the `api` directory and create a `.env` file:
+
+    ```bash
+    cd api
+    cp .env.example .env
+    ```
+  </Step>
+
+  <Step title="Configure database connection">
+    Open the `.env` file and configure your PostgreSQL connection:
+
+    ```bash .env
+    NODE_ENV=development
+    PORT=8080
+    
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_USER=your_postgres_user
+    DB_PASSWORD=your_postgres_password
+    DB_NAME=lens_music
+    ```
+
+    <Note>
+      Replace `your_postgres_user`, `your_postgres_password`, and `lens_music` with your actual PostgreSQL credentials and desired database name.
+    </Note>
+  </Step>
+
+  <Step title="Create the database">
+    Create the PostgreSQL database for Lens Music:
+
+    ```bash
+    psql -U your_postgres_user -c "CREATE DATABASE lens_music;"
+    ```
+  </Step>
+</Steps>
+
+For detailed information about all environment variables, see the [environment variables](/development/environment-variables) documentation.
+
+## Quick start with dev script
+
+The easiest way to run both the API and client is using the provided `dev.sh` script:
+
+<Steps>
+  <Step title="Make the script executable">
+    ```bash
+    chmod +x dev.sh
+    ```
+  </Step>
+
+  <Step title="Run the development servers">
+    ```bash
+    ./dev.sh
+    ```
+
+    This script will:
+    - Install dependencies for both API and client
+    - Start the API server on port 8080
+    - Start the client development server with Vite
+  </Step>
+</Steps>
+
+## Manual setup
+
+If you prefer to run the servers manually or need more control:
+
+<Tabs>
+  <Tab title="API Server">
+    <Steps>
+      <Step title="Install dependencies">
+        ```bash
+        cd api
+        npm install
+        ```
+      </Step>
+
+      <Step title="Run database migrations">
+        TypeORM will automatically sync entities in development mode when you start the server.
+      </Step>
+
+      <Step title="Seed the database (optional)">
+        Populate the database with initial data:
+
+        ```bash
+        npm run seed
+        ```
+      </Step>
+
+      <Step title="Start the development server">
+        ```bash
+        npm run dev
+        ```
+
+        The API will be available at `http://localhost:8080`
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Client Application">
+    <Steps>
+      <Step title="Install dependencies">
+        ```bash
+        cd client
+        npm install
+        ```
+      </Step>
+
+      <Step title="Start the development server">
+        ```bash
+        npm run dev -- --host
+        ```
+
+        The client will be available at `http://localhost:5173`
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Verify the installation
+
+Once both servers are running, verify the installation:
+
+<AccordionGroup>
+  <Accordion title="Check API health">
+    Open your browser or use curl to check the API:
+
+    ```bash
+    curl http://localhost:8080
+    ```
+
+    You should receive a response from the NestJS server.
+  </Accordion>
+
+  <Accordion title="Access the client">
+    Navigate to `http://localhost:5173` in your browser. You should see the Lens Music landing page.
+  </Accordion>
+
+  <Accordion title="Check database connection">
+    Verify that the API can connect to PostgreSQL by checking the server logs for any connection errors.
+  </Accordion>
+</AccordionGroup>
+
+## Available scripts
+
+Here are the key npm scripts available in each workspace:
+
+### API Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| Development | `npm run dev` | Start the API server with hot reload using nodemon |
+| Build | `npm run build` | Compile TypeScript to JavaScript in the `dist/` folder |
+| Start | `npm run start` | Run the production build |
+| Seed | `npm run seed` | Populate the database with seed data |
+
+### Client Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| Development | `npm run dev` | Start Vite development server with hot module replacement |
+| Build | `npm run build` | Build the production-ready client application |
+| Preview | `npm run preview` | Preview the production build locally |
+| Lint | `npm run lint` | Run ESLint to check for code issues |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monorepo structure" icon="folder-tree" href="/development/monorepo-structure">
+    Learn about the project organization and directory structure
+  </Card>
+  <Card title="Database schema" icon="table" href="/development/database-schema">
+    Understand the database entities and relationships
+  </Card>
+  <Card title="Environment variables" icon="key" href="/development/environment-variables">
+    Complete reference for all configuration options
+  </Card>
+  <Card title="API reference" icon="code" href="/api/overview">
+    Explore the API endpoints and usage
+  </Card>
+</CardGroup>
+
+<Warning>
+  The development servers use port 8080 for the API and port 5173 for the client. Make sure these ports are available on your system.
+</Warning>

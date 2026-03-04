@@ -1,0 +1,469 @@
+---
+title: Releases
+description: Create and manage albums, EPs, and singles in your music catalog
+---
+
+Releases represent albums, EPs, singles, and other music collections in your catalog. Each release contains tracks, metadata, and can be associated with artists and labels.
+
+## Overview
+
+The release management system enables you to:
+
+<CardGroup cols={2}>
+  <Card title="Create releases" icon="compact-disc">
+    Add albums, EPs, and singles with comprehensive metadata
+  </Card>
+  <Card title="Catalog management" icon="barcode">
+    Track UPCs, catalog numbers, and production years
+  </Card>
+  <Card title="Artist collaboration" icon="users">
+    Link multiple artists to releases for collaborations
+  </Card>
+  <Card title="Label organization" icon="building">
+    Associate releases with record labels
+  </Card>
+</CardGroup>
+
+## Release entity structure
+
+The `Release` entity contains the following fields:
+
+```typescript
+@Entity('releases')
+@Unique([
+  'title',
+  'releaseDate',
+  'productionYear',
+  'userId',
+  'labelId',
+  'version',
+])
+export class Release extends AbstractEntity {
+  // TITLE
+  @Column({ name: 'title', nullable: false })
+  title!: string;
+
+  // COVER ART
+  @Column({ name: 'cover_art', nullable: true })
+  coverArt: string;
+
+  // UPC
+  @Column({ name: 'upc', nullable: true })
+  upc: string;
+
+  // RELEASE DATE
+  @Column({ name: 'release_date', nullable: false })
+  releaseDate: string;
+
+  // VERSION
+  @Column({ name: 'version', nullable: true })
+  version: string;
+
+  // PRODUCTION YEAR
+  @Column({ name: 'production_year', nullable: false })
+  productionYear: number;
+
+  // CATALOG NUMBER
+  @Column({ name: 'catalog_number', nullable: true })
+  catalogNumber: string;
+
+  // LABEL ID
+  @Column({ name: 'label_id', nullable: true })
+  labelId: string;
+
+  // USER ID
+  @Column({ name: 'user_id', nullable: false })
+  userId: string;
+
+  // Relations
+  @ManyToOne(() => Label, (label) => label.releases, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  label: Label;
+
+  @ManyToOne(() => User, (user) => user.releases, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  user: User;
+
+  @OneToMany(() => ReleaseArtist, (releaseArtist) => releaseArtist.release)
+  artists: ReleaseArtist[];
+
+  @OneToMany(() => Track, (track) => track.release)
+  tracks: Track[];
+}
+```
+
+### Core fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `title` | string | Yes | Release title |
+| `coverArt` | string | No | URL or path to cover artwork |
+| `upc` | string | No | Universal Product Code for distribution |
+| `releaseDate` | string | Yes | ISO formatted release date |
+| `version` | string | No | Version identifier (e.g., 'original', 'deluxe', 'remaster') |
+| `productionYear` | number | Yes | Year the release was produced |
+| `catalogNumber` | string | No | Auto-generated catalog number |
+| `labelId` | UUID | No | Reference to associated label |
+| `userId` | UUID | Yes | Reference to the owning user |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+### Unique constraint
+
+<Warning>
+  A release is uniquely identified by the combination of `title`, `releaseDate`, `productionYear`, `userId`, `labelId`, and `version`. You cannot create duplicate releases with the same values for all these fields.
+</Warning>
+
+This prevents accidental duplicates while allowing:
+- Same title on different dates
+- Different versions (original, deluxe, etc.) of the same release
+- Same title under different labels
+
+### Relationships
+
+<AccordionGroup>
+  <Accordion title="Label relationship" icon="building">
+    A release can be associated with a label. When the label is deleted, all its releases are cascade deleted.
+
+    ```typescript
+    @ManyToOne(() => Label, (label) => label.releases, {
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+    })
+    ```
+  </Accordion>
+
+  <Accordion title="User relationship" icon="user">
+    Each release is owned by a user. When the user is deleted, all their releases are cascade deleted.
+
+    ```typescript
+    @ManyToOne(() => User, (user) => user.releases, {
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+    })
+    ```
+  </Accordion>
+
+  <Accordion title="Artist relationship" icon="user-music">
+    Releases connect to artists through the `ReleaseArtist` join entity, enabling many-to-many relationships for collaborations.
+
+    ```typescript
+    @OneToMany(() => ReleaseArtist, (releaseArtist) => releaseArtist.release)
+    artists: ReleaseArtist[];
+    ```
+  </Accordion>
+
+  <Accordion title="Track relationship" icon="music">
+    A release contains multiple tracks. This is a one-to-many relationship.
+
+    ```typescript
+    @OneToMany(() => Track, (track) => track.release)
+    tracks: Track[];
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common operations
+
+### Create a release
+
+Create a new release in your catalog:
+
+```typescript
+POST /releases
+
+{
+  "title": "Summer Nights EP",
+  "upc": "123456789012",
+  "releaseDate": "2024-06-15",
+  "version": "original",
+  "productionYear": 2024,
+  "labelId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+<Note>
+  The system automatically:
+  - Formats the `releaseDate` to ISO format using moment.js
+  - Generates a `catalogNumber` based on the production year
+  - Sets the `userId` from the authenticated user's context
+  - Defaults `version` to `'original'` if not provided
+</Note>
+
+**Response:**
+
+```json
+{
+  "message": "Release created successfully",
+  "data": {
+    "id": "...",
+    "title": "Summer Nights EP",
+    "catalogNumber": "CAT-2024-001",
+    "releaseDate": "2024-06-15T00:00:00.000Z",
+    "productionYear": 2024,
+    "version": "original"
+  }
+}
+```
+
+### Duplicate detection
+
+Before creating a release, the system checks for duplicates:
+
+```typescript
+const releaseExists = await this.releaseService.checkIfReleaseExists({
+  labelId: labelId as string,
+  productionYear,
+  releaseDate: formattedReleaseDate,
+  title,
+  userId: user.id,
+  version: version as string,
+});
+```
+
+If a duplicate is found:
+
+```json
+{
+  "statusCode": 409,
+  "message": "Release already exists",
+  "data": {
+    "id": "existing-release-id"
+  }
+}
+```
+
+### Fetch releases
+
+Retrieve releases with pagination and filtering:
+
+```typescript
+GET /releases?page=0&size=10&labelId=<uuid>&userId=<uuid>
+```
+
+**Query parameters:**
+- `page` - Page number (default: 0)
+- `size` - Items per page (default: 10)
+- `labelId` - Filter by label (optional)
+- `userId` - Filter by user (optional for admins)
+
+<Tabs>
+  <Tab title="Regular users">
+    Regular users automatically see only their own releases:
+
+    ```typescript
+    GET /releases?page=0&size=10
+    
+    // Filtered by:
+    {
+      userId: user.id
+    }
+    ```
+  </Tab>
+  <Tab title="Admin users">
+    Admin users can query any user's releases:
+
+    ```typescript
+    GET /releases?page=0&size=10&userId=<target-user-id>
+    
+    // No automatic filtering
+    ```
+  </Tab>
+  <Tab title="By label">
+    Filter releases by label:
+
+    ```typescript
+    GET /releases?labelId=<label-uuid>
+    ```
+  </Tab>
+</Tabs>
+
+### Get release by ID
+
+Retrieve a specific release with all related data:
+
+```typescript
+GET /releases/:id
+```
+
+**Response:**
+
+```json
+{
+  "message": "Release fetched successfully",
+  "data": {
+    "id": "...",
+    "title": "Summer Nights EP",
+    "coverArt": "https://...",
+    "releaseDate": "2024-06-15T00:00:00.000Z",
+    "productionYear": 2024,
+    "catalogNumber": "CAT-2024-001",
+    "label": { /* label data */ },
+    "user": { /* user data */ },
+    "artists": [ /* artist data */ ],
+    "tracks": [ /* track data */ ]
+  }
+}
+```
+
+## Catalog number generation
+
+Catalog numbers are automatically generated based on the production year:
+
+```typescript
+import { generateCatalogNumber } from '../../helpers/strings.helper';
+
+const catalogNumber = generateCatalogNumber(productionYear);
+// Example output: "CAT-2024-001"
+```
+
+The catalog number format typically includes:
+- A prefix (e.g., "CAT")
+- The production year
+- A sequential number
+
+<Note>
+  Catalog numbers are assigned automatically during release creation. You don't need to provide them manually.
+</Note>
+
+## Version management
+
+Releases support version identifiers for different editions:
+
+<CardGroup cols={3}>
+  <Card title="Original" icon="circle">
+    Default version for new releases
+  </Card>
+  <Card title="Deluxe" icon="star">
+    Extended editions with bonus content
+  </Card>
+  <Card title="Remaster" icon="sparkles">
+    Remastered versions of existing releases
+  </Card>
+</CardGroup>
+
+Versions allow you to:
+- Create multiple editions of the same release
+- Track different formats (vinyl, digital, CD)
+- Manage reissues and remasters
+
+```typescript
+// Create original version
+POST /releases
+{
+  "title": "Greatest Hits",
+  "version": "original",
+  "releaseDate": "2024-01-15",
+  "productionYear": 2024
+}
+
+// Create deluxe version
+POST /releases
+{
+  "title": "Greatest Hits",
+  "version": "deluxe",
+  "releaseDate": "2024-03-15",
+  "productionYear": 2024
+}
+```
+
+## Use cases
+
+### Album release
+
+Create a full-length album with metadata:
+
+```typescript
+const album = await fetch('/releases', {
+  method: 'POST',
+  body: JSON.stringify({
+    title: 'Midnight Dreams',
+    upc: '123456789012',
+    releaseDate: '2024-08-20',
+    productionYear: 2024,
+    version: 'original',
+    labelId: myLabelId
+  })
+});
+
+// Add tracks to the album
+await addTracksToRelease(album.data.id, tracks);
+```
+
+### EP release
+
+Create an extended play release:
+
+```typescript
+const ep = await fetch('/releases', {
+  method: 'POST',
+  body: JSON.stringify({
+    title: 'Summer Vibes EP',
+    releaseDate: '2024-06-01',
+    productionYear: 2024,
+    labelId: myLabelId
+  })
+});
+```
+
+### Single release
+
+Quick single release without label:
+
+```typescript
+const single = await fetch('/releases', {
+  method: 'POST',
+  body: JSON.stringify({
+    title: 'Hit Single',
+    releaseDate: '2024-05-15',
+    productionYear: 2024
+    // labelId is optional for independent releases
+  })
+});
+```
+
+### Collaboration release
+
+Create a release with multiple artists:
+
+```typescript
+// 1. Create the release
+const collab = await createRelease({
+  title: 'Epic Collaboration',
+  releaseDate: '2024-07-01',
+  productionYear: 2024
+});
+
+// 2. Link artists
+await createReleaseArtist({
+  releaseId: collab.id,
+  artistId: artist1.id
+});
+
+await createReleaseArtist({
+  releaseId: collab.id,
+  artistId: artist2.id
+});
+```
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Artists" icon="user-music" href="/features/artists">
+    Link artists to releases for proper attribution
+  </Card>
+  <Card title="Labels" icon="building" href="/features/labels">
+    Organize releases under labels
+  </Card>
+  <Card title="Lyrics" icon="align-left" href="/features/lyrics">
+    Add lyrics to tracks in your releases
+  </Card>
+  <Card title="Roles & Permissions" icon="shield" href="/features/roles-permissions">
+    Control release management access
+  </Card>
+</CardGroup>

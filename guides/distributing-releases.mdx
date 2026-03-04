@@ -1,0 +1,445 @@
+---
+title: Distributing releases
+description: Create and manage music releases with catalog numbers, UPC codes, and metadata
+---
+
+Releases are the core of your music distribution. This guide walks you through creating releases, managing metadata, and organizing tracks for distribution.
+
+## Prerequisites
+
+- An authenticated user account (see [Authentication](/guides/authentication))
+- A valid JWT token
+- A label ID (recommended, see [Creating labels](/guides/creating-labels))
+- Artist IDs to associate with the release
+
+## Understanding releases
+
+A release in Lens Music represents:
+- An album, EP, or single
+- Associated metadata (title, UPC, release date, catalog number)
+- Tracks and their information
+- Artist associations
+- Label affiliation
+
+Each release gets a unique catalog number generated from the production year.
+
+## Creating a release
+
+Set up a new music release with metadata and distribution information.
+
+<Steps>
+  <Step title="Prepare release metadata">
+    Gather the required information:
+    - **title** (required): Release title (album/EP/single name)
+    - **releaseDate** (required): Official release date (ISO 8601 format)
+    - **productionYear** (required): Year the music was produced
+    - **upc** (optional): Universal Product Code for distribution
+    - **version** (optional): Version identifier (defaults to "original")
+    - **labelId** (optional): UUID of the associated label
+
+    <Note>
+      Releases must be unique based on the combination of title, release date, production year, user, label, and version.
+    </Note>
+  </Step>
+
+  <Step title="Send create release request">
+    Make a POST request to the releases endpoint:
+
+    <CodeGroup>
+      ```bash cURL
+      curl -X POST https://api.lensmusic.com/releases \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "title": "Midnight Dreams",
+          "releaseDate": "2026-06-01",
+          "productionYear": 2026,
+          "upc": "123456789012",
+          "version": "original",
+          "labelId": "label-uuid"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch('https://api.lensmusic.com/releases', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'Midnight Dreams',
+          releaseDate: '2026-06-01',
+          productionYear: 2026,
+          upc: '123456789012',
+          version: 'original',
+          labelId: 'label-uuid'
+        })
+      });
+
+      const { data } = await response.json();
+      const releaseId = data.id;
+      const catalogNumber = data.catalogNumber;
+      ```
+
+      ```python Python
+      import requests
+
+      headers = {
+          'Authorization': f'Bearer {token}',
+          'Content-Type': 'application/json'
+      }
+
+      payload = {
+          'title': 'Midnight Dreams',
+          'releaseDate': '2026-06-01',
+          'productionYear': 2026,
+          'upc': '123456789012',
+          'version': 'original',
+          'labelId': 'label-uuid'
+      }
+
+      response = requests.post(
+          'https://api.lensmusic.com/releases',
+          headers=headers,
+          json=payload
+      )
+
+      release = response.json()['data']
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Handle the response">
+    On success, you'll receive the created release:
+
+    ```json
+    {
+      "message": "Release created successfully",
+      "data": {
+        "id": "release-uuid",
+        "title": "Midnight Dreams",
+        "releaseDate": "2026-06-01T00:00:00.000Z",
+        "productionYear": 2026,
+        "upc": "123456789012",
+        "version": "original",
+        "catalogNumber": "2026-ABC123",
+        "labelId": "label-uuid",
+        "userId": "user-uuid",
+        "coverArt": null,
+        "createdAt": "2026-03-04T10:30:00Z",
+        "updatedAt": "2026-03-04T10:30:00Z"
+      }
+    }
+    ```
+
+    <Note>
+      The `catalogNumber` is automatically generated based on the `productionYear`. Save the release `id` for adding tracks and managing the release.
+    </Note>
+  </Step>
+</Steps>
+
+## Fetching releases
+
+Retrieve releases with filtering and pagination options.
+
+### List all releases
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET "https://api.lensmusic.com/releases?page=0&size=10" \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const response = await fetch(
+    'https://api.lensmusic.com/releases?page=0&size=10',
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  const { data } = await response.json();
+  ```
+</CodeGroup>
+
+### Filter by label
+
+Retrieve releases for a specific label:
+
+```bash
+GET /releases?labelId=label-uuid&page=0&size=10
+```
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET "https://api.lensmusic.com/releases?labelId=label-uuid" \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const labelId = 'label-uuid';
+  const response = await fetch(
+    `https://api.lensmusic.com/releases?labelId=${labelId}`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+  ```
+</CodeGroup>
+
+### Filter by user (admin only)
+
+Admins can filter releases by user ID:
+
+```bash
+GET /releases?userId=user-uuid&page=0&size=10
+```
+
+<Note>
+  Regular users automatically see only their own releases. Admins can query any user's releases.
+</Note>
+
+### Get a specific release
+
+Retrieve details for a single release:
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET https://api.lensmusic.com/releases/{releaseId} \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  ```
+
+  ```javascript JavaScript
+  const releaseId = 'release-uuid';
+  const response = await fetch(
+    `https://api.lensmusic.com/releases/${releaseId}`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+
+  const { data } = await response.json();
+  ```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "message": "Release fetched successfully",
+  "data": {
+    "id": "release-uuid",
+    "title": "Midnight Dreams",
+    "releaseDate": "2026-06-01T00:00:00.000Z",
+    "productionYear": 2026,
+    "upc": "123456789012",
+    "version": "original",
+    "catalogNumber": "2026-ABC123",
+    "coverArt": null,
+    "labelId": "label-uuid",
+    "userId": "user-uuid",
+    "label": {
+      "id": "label-uuid",
+      "name": "Midnight Records"
+    },
+    "artists": [],
+    "tracks": [],
+    "createdAt": "2026-03-04T10:30:00Z",
+    "updatedAt": "2026-03-04T10:30:00Z"
+  }
+}
+```
+
+## Release metadata explained
+
+<AccordionGroup>
+  <Accordion title="Catalog number">
+    The catalog number is automatically generated using the production year:
+
+    ```
+    catalogNumber: "2026-ABC123"
+    ```
+
+    This unique identifier helps organize releases within your catalog. It's generated server-side and cannot be manually set.
+  </Accordion>
+
+  <Accordion title="UPC code">
+    Universal Product Code for commercial distribution:
+
+    ```json
+    { "upc": "123456789012" }
+    ```
+
+    - 12-digit numeric code
+    - Required for most digital distribution platforms
+    - Must be unique across all releases
+    - Optional field but recommended for commercial releases
+  </Accordion>
+
+  <Accordion title="Release date format">
+    Use ISO 8601 date format:
+
+    ```json
+    { "releaseDate": "2026-06-01" }
+    ```
+
+    The server automatically formats this to full ISO timestamp:
+    ```
+    "2026-06-01T00:00:00.000Z"
+    ```
+  </Accordion>
+
+  <Accordion title="Version identifier">
+    Differentiate between versions of the same release:
+
+    ```json
+    {
+      "version": "original",      // Original release
+      "version": "deluxe",        // Deluxe edition
+      "version": "remastered",    // Remastered version
+      "version": "instrumental"   // Instrumental version
+    }
+    ```
+
+    Defaults to "original" if not specified.
+  </Accordion>
+</AccordionGroup>
+
+## Uniqueness constraints
+
+Releases must be unique based on this combination:
+
+- Title
+- Release date
+- Production year
+- User ID
+- Label ID
+- Version
+
+If you try to create a duplicate release, you'll receive a `409 Conflict` error:
+
+```json
+{
+  "message": "Release already exists",
+  "data": {
+    "id": "existing-release-uuid"
+  }
+}
+```
+
+<Note>
+  To create variations of the same release, use the `version` field (e.g., "deluxe", "instrumental").
+</Note>
+
+## Pagination parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | integer | `0` | Zero-based page number |
+| `size` | integer | `10` | Number of releases per page |
+| `labelId` | string | - | Filter by label UUID |
+| `userId` | string | - | Filter by user UUID (admin only) |
+
+**Example:**
+
+```bash
+GET /releases?page=1&size=25&labelId=label-uuid
+```
+
+## Error handling
+
+<AccordionGroup>
+  <Accordion title="Release already exists (409 Conflict)">
+    ```json
+    {
+      "message": "Release already exists",
+      "data": {
+        "id": "existing-release-uuid"
+      }
+    }
+    ```
+
+    A release with the same metadata combination already exists. Check the uniqueness constraints or use a different version identifier.
+  </Accordion>
+
+  <Accordion title="Release not found (404)">
+    ```json
+    {
+      "message": "Release not found"
+    }
+    ```
+
+    The release ID doesn't exist or has been deleted.
+  </Accordion>
+
+  <Accordion title="Validation error (400)">
+    ```json
+    {
+      "message": "Validation failed",
+      "errors": [
+        "title should not be empty",
+        "releaseDate should not be empty",
+        "productionYear must be a number"
+      ]
+    }
+    ```
+
+    Ensure all required fields are provided with correct types.
+  </Accordion>
+</AccordionGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Unique UPC codes" icon="barcode">
+    Use unique UPC codes for each release. Obtain UPC codes from authorized providers for commercial distribution.
+  </Card>
+
+  <Card title="Accurate metadata" icon="circle-check">
+    Provide complete and accurate metadata. This ensures proper cataloging and distribution.
+  </Card>
+
+  <Card title="Proper versioning" icon="code-branch">
+    Use the version field to differentiate between release variants (original, deluxe, remastered).
+  </Card>
+
+  <Card title="Label association" icon="link">
+    Always associate releases with a label for better organization and catalog management.
+  </Card>
+</CardGroup>
+
+## Adding tracks to releases
+
+After creating a release, you'll typically want to add tracks. While the tracks endpoint details are covered in the API reference, here's a quick overview:
+
+```javascript
+// Create a track for the release
+const trackResponse = await fetch('https://api.lensmusic.com/tracks', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'Midnight Song',
+    duration: 240,  // in seconds
+    explicit: false,
+    isrc: 'USXXX2600001',
+    releaseId: releaseId  // Associate with release
+  })
+});
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Creating synced lyrics" icon="closed-captioning" href="/guides/creating-synced-lyrics">
+    Add time-synced lyrics to your tracks
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/releases">
+    View complete releases API documentation
+  </Card>
+</CardGroup>

@@ -1,0 +1,265 @@
+---
+title: Welcome to Lens Music
+description: A comprehensive music distribution platform for managing artists, labels, releases, and lyrics
+mode: custom
+---
+
+<div className="relative overflow-hidden bg-gradient-to-br from-[#8B5CF6] via-[#6D28D9] to-[#5B21B6] dark:from-[#6D28D9] dark:via-[#5B21B6] dark:to-[#4C1D95] py-20">
+  <div className="max-w-6xl mx-auto px-6">
+    <div className="grid lg:grid-cols-12 gap-12 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-5xl lg:text-6xl font-bold text-white mb-6">
+          Welcome to Lens Music
+        </h1>
+        <p className="text-xl text-purple-100 max-w-2xl mb-8">
+          A powerful platform for managing your music distribution workflow. Create artists, organize labels, distribute releases, and sync lyrics—all in one place.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center px-6 py-3 bg-white text-[#8B5CF6] font-semibold rounded-lg hover:bg-purple-50 transition-colors"
+          >
+            Get Started
+            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          <a
+            href="/api/overview"
+            className="inline-flex items-center px-6 py-3 border-2 border-white/30 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-colors"
+          >
+            API Reference
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <div className="absolute inset-0 bg-white/10 rounded-2xl blur-3xl"></div>
+          <div className="relative bg-white/5 backdrop-blur-sm border border-white/20 rounded-2xl p-8">
+            <svg className="w-full h-auto text-white/80" viewBox="0 0 200 200" fill="none">
+              <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+              <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+              <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="2" />
+              <path d="M100 60 L100 100 L130 130" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              <circle cx="100" cy="100" r="8" fill="currentColor" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Quick start
+  </h2>
+  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+    Get up and running with Lens Music in minutes
+  </p>
+
+  <Steps>
+    <Step title="Create your account">
+      Sign up for a Lens Music account to access the platform. You'll need to provide basic information and verify your email address.
+
+      ```bash
+      POST /api/auth/signup
+      ```
+
+      After successful registration, you'll receive a JWT token for authentication.
+    </Step>
+
+    <Step title="Set up your first label">
+      Create a label to organize your music releases. Labels represent record labels or distribution entities.
+
+      ```bash
+      POST /api/labels
+      ```
+
+      Specify the label name, country, and optional description to get started.
+    </Step>
+
+    <Step title="Add artists">
+      Register the artists associated with your releases. Artists can be linked to multiple releases and labels.
+
+      ```bash
+      POST /api/artists
+      ```
+
+      Artists have status tracking (active/inactive) for managing your roster.
+    </Step>
+
+    <Step title="Distribute your first release">
+      Create a release with UPC codes, catalog numbers, and release dates. Link artists and tracks to complete the release.
+
+      ```bash
+      POST /api/releases
+      ```
+
+      The platform automatically generates catalog numbers and validates UPC codes for distribution.
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Core features
+  </h2>
+  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+    Everything you need to manage your music distribution workflow
+  </p>
+
+  <CardGroup cols={2}>
+    <Card title="Artist management" icon="user-music" href="/features/artists">
+      Create and manage artists with status tracking, user association, and release linking.
+    </Card>
+    <Card title="Label organization" icon="building" href="/features/labels">
+      Organize your catalog with labels supporting multi-country distribution and release grouping.
+    </Card>
+    <Card title="Release distribution" icon="compact-disc" href="/features/releases">
+      Distribute music with UPC codes, catalog number generation, and track management.
+    </Card>
+    <Card title="Lyrics sync" icon="music" href="/features/lyrics">
+      Create and time-synchronize lyrics for your tracks with precise timestamp control.
+    </Card>
+    <Card title="Access control" icon="shield-check" href="/features/roles-permissions">
+      Manage user permissions with role-based access control for admins and users.
+    </Card>
+    <Card title="RESTful API" icon="code" href="/api/overview">
+      Complete REST API with JWT authentication and comprehensive endpoint coverage.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Explore by topic
+  </h2>
+  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+    Find guides and documentation for your specific needs
+  </p>
+
+  <div className="grid md:grid-cols-2 gap-6">
+    <a
+      href="/guides/managing-artists"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#8B5CF6] dark:hover:border-[#8B5CF6] overflow-hidden no-underline transition-colors bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="h-56 bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Managing artists
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Learn how to create, update, and organize artists in your catalog
+        </p>
+        <span className="text-sm font-medium text-[#8B5CF6] group-hover:text-[#6D28D9] flex items-center">
+          Read guide
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    <a
+      href="/guides/distributing-releases"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#8B5CF6] dark:hover:border-[#8B5CF6] overflow-hidden no-underline transition-colors bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="h-56 bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>
+      </div>
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Distributing releases
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Complete guide to creating and distributing music releases with UPC codes
+        </p>
+        <span className="text-sm font-medium text-[#8B5CF6] group-hover:text-[#6D28D9] flex items-center">
+          Read guide
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    <a
+      href="/guides/creating-synced-lyrics"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#8B5CF6] dark:hover:border-[#8B5CF6] overflow-hidden no-underline transition-colors bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="h-56 bg-gradient-to-br from-purple-700 to-purple-900 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Creating synced lyrics
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Add time-synchronized lyrics to your tracks for enhanced playback
+        </p>
+        <span className="text-sm font-medium text-[#8B5CF6] group-hover:text-[#6D28D9] flex items-center">
+          Read guide
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    <a
+      href="/development/setup"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#8B5CF6] dark:hover:border-[#8B5CF6] overflow-hidden no-underline transition-colors bg-white dark:bg-[#1a1d27]"
+    >
+      <div className="h-56 bg-gradient-to-br from-purple-800 to-purple-950 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+      </div>
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Development setup
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Set up your local development environment for the Lens Music monorepo
+        </p>
+        <span className="text-sm font-medium text-[#8B5CF6] group-hover:text-[#6D28D9] flex items-center">
+          Read guide
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] dark:from-[#6D28D9] dark:to-[#5B21B6] p-8 md:p-12">
+    <div className="max-w-3xl">
+      <h2 className="text-3xl font-bold text-white mb-4">
+        Ready to get started?
+      </h2>
+      <p className="text-lg text-purple-100 mb-6">
+        Follow our quickstart guide to create your first release in minutes, or explore the API reference to integrate Lens Music into your workflow.
+      </p>
+      <a
+        href="/quickstart"
+        className="inline-flex items-center px-6 py-3 bg-white text-[#8B5CF6] font-semibold rounded-lg hover:bg-purple-50 transition-colors"
+      >
+        Get Started
+        <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,282 @@
+---
+title: Authentication
+description: Learn how to authenticate users in Lens Music using JWT tokens
+---
+
+Lens Music uses JWT (JSON Web Token) authentication to secure API endpoints. This guide walks you through user registration, login, and using authentication tokens.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Access to the Lens Music API
+- A valid email address
+- A tool for making HTTP requests (curl, Postman, or similar)
+
+## User registration
+
+Create a new user account by signing up with your email and password.
+
+<Steps>
+  <Step title="Prepare signup data">
+    Gather the required information:
+    - **email**: A valid email address
+    - **name**: Your full name
+    - **password**: A secure password
+    - **phone** (optional): Your phone number
+    - **role** (optional): User role (defaults to standard user)
+  </Step>
+
+  <Step title="Send signup request">
+    Make a POST request to the signup endpoint:
+
+    ```bash
+    POST /auth/signup
+    Content-Type: application/json
+
+    {
+      "email": "artist@example.com",
+      "name": "John Doe",
+      "password": "SecurePassword123!",
+      "phone": "+1234567890"
+    }
+    ```
+
+    <CodeGroup>
+      ```bash cURL
+      curl -X POST https://api.lensmusic.com/auth/signup \
+        -H "Content-Type: application/json" \
+        -d '{
+          "email": "artist@example.com",
+          "name": "John Doe",
+          "password": "SecurePassword123!"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch('https://api.lensmusic.com/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: 'artist@example.com',
+          name: 'John Doe',
+          password: 'SecurePassword123!'
+        })
+      });
+
+      const data = await response.json();
+      console.log(data);
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Handle the response">
+    On successful registration, you'll receive:
+
+    ```json
+    {
+      "message": "You have signed up successfully!",
+      "data": {
+        "user": {
+          "id": "uuid-string",
+          "email": "artist@example.com",
+          "name": "John Doe",
+          "phone": "+1234567890",
+          "role": "user"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      }
+    }
+    ```
+
+    <Note>
+      Store the `token` securely. You'll need it to authenticate future API requests.
+    </Note>
+  </Step>
+</Steps>
+
+## User login
+
+Authenticate existing users to obtain a JWT token.
+
+<Steps>
+  <Step title="Prepare login credentials">
+    You only need two fields:
+    - **email**: Your registered email address
+    - **password**: Your account password
+  </Step>
+
+  <Step title="Send login request">
+    Make a POST request to the login endpoint:
+
+    <CodeGroup>
+      ```bash cURL
+      curl -X POST https://api.lensmusic.com/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{
+          "email": "artist@example.com",
+          "password": "SecurePassword123!"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch('https://api.lensmusic.com/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: 'artist@example.com',
+          password: 'SecurePassword123!'
+        })
+      });
+
+      const { data } = await response.json();
+      const token = data.token;
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Receive authentication token">
+    Successful login returns:
+
+    ```json
+    {
+      "message": "You have logged in successfully!",
+      "data": {
+        "user": {
+          "id": "uuid-string",
+          "email": "artist@example.com",
+          "name": "John Doe",
+          "role": "user"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Using authentication tokens
+
+Once you have a JWT token, include it in the `Authorization` header for all protected endpoints.
+
+### Making authenticated requests
+
+<CodeGroup>
+  ```bash cURL
+  curl -X GET https://api.lensmusic.com/artists \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  ```
+
+  ```javascript JavaScript
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+  const response = await fetch('https://api.lensmusic.com/artists', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  const data = await response.json();
+  ```
+
+  ```python Python
+  import requests
+
+  token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  headers = {'Authorization': f'Bearer {token}'}
+
+  response = requests.get(
+      'https://api.lensmusic.com/artists',
+      headers=headers
+  )
+  data = response.json()
+  ```
+</CodeGroup>
+
+<Warning>
+  All endpoints except `/auth/signup` and `/auth/login` require authentication. Requests without a valid token will return a `401 Unauthorized` error.
+</Warning>
+
+## Error handling
+
+Handle common authentication errors gracefully:
+
+<Accordion title="User already exists (409 Conflict)">
+  ```json
+  {
+    "message": "User already exists",
+    "data": {
+      "id": "existing-user-id",
+      "email": "artist@example.com"
+    }
+  }
+  ```
+
+  This occurs when trying to sign up with an email that's already registered. Direct the user to login instead.
+</Accordion>
+
+<Accordion title="Invalid email format (400 Bad Request)">
+  ```json
+  {
+    "message": "Invalid email format"
+  }
+  ```
+
+  Ensure the email follows standard format: `user@domain.com`
+</Accordion>
+
+<Accordion title="Invalid credentials (401 Unauthorized)">
+  ```json
+  {
+    "message": "Invalid email or password"
+  }
+  ```
+
+  The email or password is incorrect. Verify credentials and try again.
+</Accordion>
+
+<Accordion title="Token expired (401 Unauthorized)">
+  ```json
+  {
+    "message": "Token expired"
+  }
+  ```
+
+  The JWT token has expired. Login again to obtain a new token.
+</Accordion>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Secure token storage" icon="lock">
+    Store tokens in secure storage (e.g., httpOnly cookies, secure localStorage) and never expose them in URLs or logs.
+  </Card>
+
+  <Card title="Token refresh" icon="rotate">
+    Implement token refresh logic to maintain user sessions without requiring frequent re-authentication.
+  </Card>
+
+  <Card title="Password strength" icon="shield">
+    Enforce strong password requirements: minimum 8 characters with uppercase, lowercase, numbers, and symbols.
+  </Card>
+
+  <Card title="Error handling" icon="triangle-exclamation">
+    Provide clear error messages to users while avoiding security information disclosure.
+  </Card>
+</CardGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Managing artists" icon="microphone" href="/guides/managing-artists">
+    Create and manage artist profiles
+  </Card>
+  <Card title="Creating labels" icon="record-vinyl" href="/guides/creating-labels">
+    Set up record labels for your releases
+  </Card>
+</CardGroup>

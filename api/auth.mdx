@@ -1,0 +1,232 @@
+---
+title: Auth endpoints
+description: User authentication endpoints for signup and login
+---
+
+The auth endpoints handle user registration and authentication. These are the only public endpoints that don't require an access token.
+
+## Sign up
+
+`POST /api/auth/signup`
+
+Create a new user account and receive an access token.
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  User's email address (must be valid format)
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  User's full name
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password (min 6 characters recommended)
+</ParamField>
+
+<ParamField body="phone" type="string">
+  User's phone number (optional)
+</ParamField>
+
+<ParamField body="role" type="string">
+  User's role (optional, defaults to 'user')
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "You have signed up successfully!"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="user" type="object">
+    <ResponseField name="id" type="string">
+      Unique user identifier (UUID)
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+    <ResponseField name="phone" type="string">
+      User's phone number
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      User status (active/inactive)
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </ResponseField>
+  <ResponseField name="token" type="string">
+    JWT access token for authentication
+  </ResponseField>
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://your-domain.com/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "artist@example.com",
+    "name": "Jane Smith",
+    "password": "securePass123",
+    "phone": "+1234567890"
+  }'
+```
+
+```javascript
+const response = await fetch('https://your-domain.com/api/auth/signup', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'artist@example.com',
+    name: 'Jane Smith',
+    password: 'securePass123',
+    phone: '+1234567890'
+  })
+});
+
+const data = await response.json();
+console.log(data.data.token);
+```
+
+### Example response
+
+```json
+{
+  "message": "You have signed up successfully!",
+  "data": {
+    "user": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "email": "artist@example.com",
+      "name": "Jane Smith",
+      "phone": "+1234567890",
+      "status": "active",
+      "createdAt": "2024-03-04T10:00:00.000Z",
+      "updatedAt": "2024-03-04T10:00:00.000Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsImVtYWlsIjoiYXJ0aXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzA5NTUzNjAwfQ.xyz"
+  }
+}
+```
+
+### Error responses
+
+**400 Bad Request** - Invalid email format
+
+```json
+{
+  "statusCode": 400,
+  "message": "Invalid email address"
+}
+```
+
+**409 Conflict** - User already exists
+
+```json
+{
+  "message": "User already exists",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "artist@example.com"
+  }
+}
+```
+
+## Login
+
+`POST /api/auth/login`
+
+Authenticate with existing credentials and receive an access token.
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  User's email address
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "You have logged in successfully!"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="user" type="object">
+    User object (same structure as signup)
+  </ResponseField>
+  <ResponseField name="token" type="string">
+    JWT access token for authentication
+  </ResponseField>
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://your-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "artist@example.com",
+    "password": "securePass123"
+  }'
+```
+
+```javascript
+const response = await fetch('https://your-domain.com/api/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'artist@example.com',
+    password: 'securePass123'
+  })
+});
+
+const data = await response.json();
+localStorage.setItem('token', data.data.token);
+```
+
+### Example response
+
+```json
+{
+  "message": "You have logged in successfully!",
+  "data": {
+    "user": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "email": "artist@example.com",
+      "name": "Jane Smith",
+      "phone": "+1234567890",
+      "status": "active",
+      "createdAt": "2024-03-04T10:00:00.000Z",
+      "updatedAt": "2024-03-04T10:00:00.000Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+### Error responses
+
+**401 Unauthorized** - Invalid credentials
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid credentials"
+}
+```

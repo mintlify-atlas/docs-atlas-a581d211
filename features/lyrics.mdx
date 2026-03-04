@@ -1,0 +1,442 @@
+---
+title: Lyrics
+description: Add synchronized and plain text lyrics to your music tracks
+---
+
+Lyrics provide text content for tracks, supporting both plain text and time-synchronized formats. You can add multiple language versions for international audiences.
+
+## Overview
+
+The lyrics management system enables you to:
+
+<CardGroup cols={2}>
+  <Card title="Add lyrics" icon="align-left">
+    Attach lyrics to any track in your catalog
+  </Card>
+  <Card title="Time synchronization" icon="clock">
+    Create karaoke-style synchronized lyrics
+  </Card>
+  <Card title="Multi-language" icon="language">
+    Support multiple language versions per track
+  </Card>
+  <Card title="JSONB storage" icon="database">
+    Flexible structure for lyrics data
+  </Card>
+</CardGroup>
+
+## Lyrics entity structure
+
+The `Lyrics` entity contains the following fields:
+
+```typescript
+@Entity()
+export class Lyrics extends AbstractEntity {
+  // CONTENT
+  @Column({ type: 'jsonb' })
+  content: { time?: string; text: string }[];
+
+  // TRACK ID
+  @Column({ name: 'track_id', nullable: false, type: 'uuid' })
+  trackId!: UUID;
+
+  // TRACK
+  @ManyToOne(() => Track, (track) => track.lyrics)
+  @JoinColumn({ name: 'track_id' })
+  track!: Track;
+
+  // LANGUAGE
+  @Column({
+    name: 'language',
+    nullable: false,
+    type: 'varchar',
+    default: 'en',
+  })
+  language!: string;
+}
+```
+
+### Core fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier (inherited from AbstractEntity) |
+| `content` | JSONB array | Yes | Array of lyrics lines with optional timestamps |
+| `trackId` | UUID | Yes | Reference to the parent track |
+| `language` | string | Yes | ISO language code (default: `en`) |
+| `createdAt` | timestamp | Yes | Record creation time (inherited) |
+| `updatedAt` | timestamp | Yes | Last update time (inherited) |
+
+### Content structure
+
+Lyrics are stored as JSONB arrays, where each element represents a line:
+
+<Tabs>
+  <Tab title="Plain text lyrics">
+    For non-synchronized lyrics, omit the `time` field:
+
+    ```json
+    [
+      { "text": "Verse one, line one" },
+      { "text": "Verse one, line two" },
+      { "text": "" },
+      { "text": "Chorus starts here" }
+    ]
+    ```
+  </Tab>
+  <Tab title="Synchronized lyrics">
+    For time-synchronized lyrics, include timestamps:
+
+    ```json
+    [
+      { "time": "00:00.00", "text": "Intro" },
+      { "time": "00:15.50", "text": "Verse one, line one" },
+      { "time": "00:20.30", "text": "Verse one, line two" },
+      { "time": "00:45.00", "text": "Chorus starts here" }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  The `time` field is optional, allowing you to mix synchronized and non-synchronized content or gradually add timestamps to existing lyrics.
+</Note>
+
+### Relationships
+
+<AccordionGroup>
+  <Accordion title="Track relationship" icon="music">
+    Each lyrics record belongs to exactly one track. A track can have multiple lyrics records (for different languages).
+
+    ```typescript
+    @ManyToOne(() => Track, (track) => track.lyrics)
+    @JoinColumn({ name: 'track_id' })
+    track!: Track;
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common operations
+
+### Create lyrics
+
+Add lyrics to a track:
+
+```typescript
+POST /lyrics
+
+{
+  "trackId": "550e8400-e29b-41d4-a716-446655440000",
+  "language": "en",
+  "content": [
+    { "time": "00:00.00", "text": "[Intro]" },
+    { "time": "00:10.50", "text": "Walking down the street" },
+    { "time": "00:15.30", "text": "With a rhythm in my feet" },
+    { "text": "" },
+    { "time": "00:30.00", "text": "Music in the air tonight" }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Lyrics created successfully",
+  "data": {
+    "id": "...",
+    "trackId": "550e8400-e29b-41d4-a716-446655440000",
+    "language": "en",
+    "content": [ /* content array */ ],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Fetch lyrics
+
+Retrieve lyrics with optional filtering:
+
+```typescript
+GET /lyrics?page=0&size=10&trackId=<uuid>
+```
+
+**Query parameters:**
+- `page` - Page number (default: 0)
+- `size` - Items per page (default: 10)
+- `trackId` - Filter by track (optional)
+
+<Tabs>
+  <Tab title="All lyrics">
+    Get paginated list of all lyrics:
+
+    ```typescript
+    GET /lyrics?page=0&size=20
+    ```
+  </Tab>
+  <Tab title="By track">
+    Get all lyrics for a specific track:
+
+    ```typescript
+    GET /lyrics?trackId=550e8400-e29b-41d4-a716-446655440000
+    ```
+    
+    This returns all language versions for the track.
+  </Tab>
+</Tabs>
+
+### Get lyrics by ID
+
+Retrieve a specific lyrics record:
+
+```typescript
+GET /lyrics/:id
+```
+
+**Response:**
+
+```json
+{
+  "message": "Lyrics fetched successfully",
+  "data": {
+    "id": "...",
+    "trackId": "...",
+    "language": "en",
+    "content": [
+      { "time": "00:10.50", "text": "Walking down the street" },
+      { "time": "00:15.30", "text": "With a rhythm in my feet" }
+    ]
+  }
+}
+```
+
+## Language support
+
+Lyrics support multiple languages using ISO 639-1 language codes:
+
+<CardGroup cols={3}>
+  <Card title="English" icon="flag-usa">
+    `en` (default)
+  </Card>
+  <Card title="Spanish" icon="flag">
+    `es`
+  </Card>
+  <Card title="French" icon="flag">
+    `fr`
+  </Card>
+  <Card title="German" icon="flag">
+    `de`
+  </Card>
+  <Card title="Japanese" icon="flag">
+    `ja`
+  </Card>
+  <Card title="Korean" icon="flag">
+    `ko`
+  </Card>
+</CardGroup>
+
+### Adding multiple language versions
+
+You can add lyrics in different languages for the same track:
+
+```typescript
+// English version
+POST /lyrics
+{
+  "trackId": "track-uuid",
+  "language": "en",
+  "content": [
+    { "text": "Hello world" }
+  ]
+}
+
+// Spanish version
+POST /lyrics
+{
+  "trackId": "track-uuid",
+  "language": "es",
+  "content": [
+    { "text": "Hola mundo" }
+  ]
+}
+```
+
+## Time format
+
+For synchronized lyrics, use the format `MM:SS.ss` or `HH:MM:SS.ss`:
+
+<CodeGroup>
+```json Standard format (MM:SS.ss)
+[
+  { "time": "00:15.50", "text": "First line" },
+  { "time": "00:20.30", "text": "Second line" },
+  { "time": "01:05.00", "text": "One minute later" }
+]
+```
+
+```json Extended format (HH:MM:SS.ss)
+[
+  { "time": "00:00:15.50", "text": "First line" },
+  { "time": "00:00:20.30", "text": "Second line" },
+  { "time": "00:01:05.00", "text": "One minute later" }
+]
+```
+</CodeGroup>
+
+<Note>
+  Timestamps are stored as strings, giving you flexibility in format. Choose a format and be consistent within each lyrics record.
+</Note>
+
+## Use cases
+
+### Simple song lyrics
+
+Add plain text lyrics without timestamps:
+
+```typescript
+const lyrics = await fetch('/lyrics', {
+  method: 'POST',
+  body: JSON.stringify({
+    trackId: trackId,
+    language: 'en',
+    content: [
+      { text: 'Verse 1:' },
+      { text: 'Walking through the night' },
+      { text: 'Everything feels right' },
+      { text: '' },
+      { text: 'Chorus:' },
+      { text: 'Dancing in the moonlight' },
+      { text: 'Everything is alright' }
+    ]
+  })
+});
+```
+
+### Karaoke-style lyrics
+
+Create synchronized lyrics for karaoke display:
+
+```typescript
+const syncedLyrics = await fetch('/lyrics', {
+  method: 'POST',
+  body: JSON.stringify({
+    trackId: trackId,
+    language: 'en',
+    content: [
+      { time: '00:00.00', text: '[Intro]' },
+      { time: '00:10.00', text: 'Let me sing you a song' },
+      { time: '00:15.50', text: 'That will make you dance along' },
+      { time: '00:20.30', text: 'To the rhythm and the beat' },
+      { time: '00:25.00', text: 'Move your body and your feet' }
+    ]
+  })
+});
+```
+
+### Multi-language track
+
+Add lyrics in multiple languages:
+
+```typescript
+// Original English lyrics
+await createLyrics({
+  trackId: trackId,
+  language: 'en',
+  content: [{ text: 'Welcome to the show' }]
+});
+
+// Japanese translation
+await createLyrics({
+  trackId: trackId,
+  language: 'ja',
+  content: [{ text: 'ショーへようこそ' }]
+});
+
+// Spanish translation
+await createLyrics({
+  trackId: trackId,
+  language: 'es',
+  content: [{ text: 'Bienvenido al espectáculo' }]
+});
+```
+
+### Gradual timestamp addition
+
+Start with plain text and add timestamps later:
+
+```typescript
+// Initial creation without timestamps
+POST /lyrics
+{
+  "trackId": "...",
+  "content": [
+    { "text": "Line one" },
+    { "text": "Line two" },
+    { "text": "Line three" }
+  ]
+}
+
+// Later, update with timestamps
+PATCH /lyrics/:id
+{
+  "content": [
+    { "time": "00:10.00", "text": "Line one" },
+    { "time": "00:15.00", "text": "Line two" },
+    { "time": "00:20.00", "text": "Line three" }
+  ]
+}
+```
+
+## JSONB advantages
+
+Storing lyrics as JSONB provides several benefits:
+
+<CardGroup cols={2}>
+  <Card title="Flexible schema" icon="arrows-split">
+    Add custom fields without schema changes (e.g., `speaker`, `harmony`, `style`)
+  </Card>
+  <Card title="Efficient queries" icon="magnifying-glass">
+    Query and index JSON content directly in PostgreSQL
+  </Card>
+  <Card title="Array operations" icon="list">
+    Manipulate lyrics lines using array operations
+  </Card>
+  <Card title="No parsing overhead" icon="gauge-high">
+    Store and retrieve structured data without serialization
+  </Card>
+</CardGroup>
+
+### Extended content structure
+
+You can extend the content structure with additional fields:
+
+```json
+[
+  {
+    "time": "00:10.00",
+    "text": "Main vocal line",
+    "harmony": "Background vocals",
+    "speaker": "Lead Singer"
+  },
+  {
+    "time": "00:15.00",
+    "text": "Next line",
+    "style": "whispered"
+  }
+]
+```
+
+<Note>
+  While the entity defines the basic structure with `time` and `text`, the JSONB column accepts any valid JSON structure.
+</Note>
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Releases" icon="compact-disc" href="/features/releases">
+    Organize tracks into releases
+  </Card>
+  <Card title="Artists" icon="user-music" href="/features/artists">
+    Credit songwriters and performers
+  </Card>
+</CardGroup>

@@ -1,80 +1,277 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Lens Music in minutes - from account creation to your first music release
 ---
 
-## Get started in three steps
+This guide will walk you through creating an account, setting up your label, adding artists, and publishing your first release on Lens Music.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, ensure you have:
+- A valid email address
+- Artist and release information ready
+- Cover art and audio files prepared
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Create your account
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Sign up for Lens Music">
+    Create your account by sending a POST request to the signup endpoint:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    POST /api/auth/signup
+    Content-Type: application/json
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    {
+      "email": "artist@example.com",
+      "name": "Your Name",
+      "phone": "+1234567890",
+      "password": "your_secure_password"
+    }
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Note>
+      Your password should be strong and secure. The API uses bcrypt for password hashing.
+    </Note>
 
-### Step 3: Go live
+    **Response:**
+    ```json
+    {
+      "message": "You have signed up successfully!",
+      "data": {
+        "user": {
+          "id": "uuid-string",
+          "email": "artist@example.com",
+          "name": "Your Name",
+          "phone": "+1234567890",
+          "status": "ACTIVE"
+        },
+        "token": "jwt-token-string"
+      }
+    }
+    ```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    Save the JWT token - you'll need it for all subsequent requests.
+  </Step>
+
+  <Step title="Login to your account">
+    If you already have an account, authenticate with:
+
+    ```bash
+    POST /api/auth/login
+    Content-Type: application/json
+
+    {
+      "email": "artist@example.com",
+      "password": "your_secure_password"
+    }
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "You have logged in successfully!",
+      "data": {
+        "user": {
+          "id": "uuid-string",
+          "email": "artist@example.com",
+          "name": "Your Name"
+        },
+        "token": "jwt-token-string"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Set up your music infrastructure
+
+<Steps>
+  <Step title="Create a label">
+    Every release needs to be associated with a label. Create one with:
+
+    ```bash
+    POST /api/labels
+    Authorization: Bearer your-jwt-token
+    Content-Type: application/json
+
+    {
+      "name": "My Record Label",
+      "email": "label@example.com",
+      "description": "Independent music label",
+      "country": "RW"
+    }
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Label created successfully",
+      "data": {
+        "id": "label-uuid",
+        "name": "My Record Label",
+        "email": "label@example.com",
+        "country": "RW",
+        "userId": "your-user-id"
+      }
+    }
+    ```
+
+    <Note>
+      The country field accepts ISO country codes. Default is "RW" (Rwanda).
+    </Note>
+  </Step>
+
+  <Step title="Add your artists">
+    Create artist profiles for the musicians on your releases:
+
+    ```bash
+    POST /api/artists
+    Authorization: Bearer your-jwt-token
+    Content-Type: application/json
+
+    {
+      "name": "Artist Name"
+    }
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Artist created successfully",
+      "data": {
+        "id": "artist-uuid",
+        "name": "Artist Name",
+        "status": "ACTIVE",
+        "userId": "your-user-id"
+      }
+    }
+    ```
+
+    Artists are automatically set to ACTIVE status and associated with your account.
+  </Step>
+</Steps>
+
+## Publish your first release
+
+<Steps>
+  <Step title="Create the release">
+    Now you're ready to create your first music release:
+
+    ```bash
+    POST /api/releases
+    Authorization: Bearer your-jwt-token
+    Content-Type: application/json
+
+    {
+      "title": "My First Album",
+      "upc": "123456789012",
+      "releaseDate": "2026-06-01",
+      "productionYear": 2026,
+      "version": "original",
+      "labelId": "your-label-id"
+    }
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Release created successfully",
+      "data": {
+        "id": "release-uuid",
+        "title": "My First Album",
+        "upc": "123456789012",
+        "releaseDate": "2026-06-01T00:00:00.000Z",
+        "productionYear": 2026,
+        "version": "original",
+        "catalogNumber": "LM-2026-XXXX",
+        "labelId": "your-label-id",
+        "userId": "your-user-id"
+      }
+    }
+    ```
+
+    <Note>
+      The catalog number is automatically generated based on the production year.
+    </Note>
+
+    <Warning>
+      Releases are unique by the combination of title, release date, production year, label, and version. You cannot create duplicate releases.
+    </Warning>
+  </Step>
+
+  <Step title="View your release">
+    Retrieve your release details:
+
+    ```bash
+    GET /api/releases/{release-id}
+    Authorization: Bearer your-jwt-token
+    ```
+
+    Or list all your releases:
+
+    ```bash
+    GET /api/releases?page=0&size=10
+    Authorization: Bearer your-jwt-token
+    ```
+
+    The API supports pagination with `page` and `size` query parameters, and filtering by `labelId` or `userId`.
+  </Step>
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Architecture Overview" icon="sitemap" href="/architecture">
+    Learn about the Lens Music platform architecture
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Managing Artists" icon="music" href="/guides/managing-artists">
+    Deep dive into artist management
+  </Card>
+  <Card title="Release Management" icon="compact-disc" href="/guides/distributing-releases">
+    Advanced release features and workflows
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Authentication headers
+
+All authenticated endpoints require a JWT token in the Authorization header:
+
+```bash
+Authorization: Bearer your-jwt-token
+```
+
+The token is valid for 1 week and must be included in every request to protected endpoints.
+
+## Common error responses
+
+<CodeGroup>
+```json 400 Bad Request
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request"
+}
+```
+
+```json 401 Unauthorized
+{
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized"
+}
+```
+
+```json 409 Conflict
+{
+  "statusCode": 409,
+  "message": "Release already exists",
+  "data": {
+    "id": "existing-release-id"
+  }
+}
+```
+</CodeGroup>

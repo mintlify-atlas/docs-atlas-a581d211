@@ -1,0 +1,272 @@
+---
+title: Roles endpoints
+description: Manage user roles and permissions
+---
+
+The roles endpoints allow you to create and retrieve user roles for access control. All endpoints require JWT authentication.
+
+## Create role
+
+`POST /api/roles`
+
+Create a new user role. Role names must be unique.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Unique role name (e.g., 'editor', 'moderator')
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of the role and its permissions
+</ParamField>
+
+<ParamField body="createdById" type="string">
+  UUID of the user creating the role (defaults to current user)
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Role created successfully"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created role object
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://your-domain.com/api/roles \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "editor",
+    "description": "Can edit releases and manage artists"
+  }'
+```
+
+```javascript
+const response = await fetch('https://your-domain.com/api/roles', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'editor',
+    description: 'Can edit releases and manage artists'
+  })
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Role created successfully",
+  "data": {
+    "id": "f6a7b8c9-d0e1-4f5a-8b7c-9d8e7f6a5b4c",
+    "name": "editor",
+    "description": "Can edit releases and manage artists",
+    "createdById": "550e8400-e29b-41d4-a716-446655440000",
+    "createdAt": "2024-03-04T10:00:00.000Z",
+    "updatedAt": "2024-03-04T10:00:00.000Z"
+  }
+}
+```
+
+### Error responses
+
+**409 Conflict** - Role name already exists
+
+```json
+{
+  "statusCode": 409,
+  "message": "Role with this name already exists"
+}
+```
+
+## List roles
+
+`GET /api/roles`
+
+Retrieve a paginated list of roles. You can filter roles using query parameters.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Query parameters
+
+<ParamField query="size" type="number" default="10">
+  Number of roles per page
+</ParamField>
+
+<ParamField query="page" type="number" default="0">
+  Page number (zero-indexed)
+</ParamField>
+
+You can pass additional query parameters to filter roles by any field (e.g., `name=editor`).
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Roles returned successfully"
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of role objects
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X GET "https://your-domain.com/api/roles?size=20&page=0" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript
+const params = new URLSearchParams({
+  size: '20',
+  page: '0'
+});
+
+const response = await fetch(`https://your-domain.com/api/roles?${params}`, {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Roles returned successfully",
+  "data": [
+    {
+      "id": "f6a7b8c9-d0e1-4f5a-8b7c-9d8e7f6a5b4c",
+      "name": "editor",
+      "description": "Can edit releases and manage artists",
+      "createdById": "550e8400-e29b-41d4-a716-446655440000",
+      "createdAt": "2024-03-04T10:00:00.000Z",
+      "updatedAt": "2024-03-04T10:00:00.000Z"
+    },
+    {
+      "id": "a7b8c9d0-e1f2-4a5b-8c7d-9e8f7a6b5c4d",
+      "name": "moderator",
+      "description": "Can moderate content and users",
+      "createdById": "550e8400-e29b-41d4-a716-446655440000",
+      "createdAt": "2024-03-04T09:00:00.000Z",
+      "updatedAt": "2024-03-04T09:00:00.000Z"
+    }
+  ]
+}
+```
+
+## Get role by ID
+
+`GET /api/roles/:id`
+
+Retrieve a specific role by ID.
+
+**Authentication required:** Yes (JWT Bearer token)
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier (UUID) of the role
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message: "Role found successfully"
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The role object
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X GET https://your-domain.com/api/roles/f6a7b8c9-d0e1-4f5a-8b7c-9d8e7f6a5b4c \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```javascript
+const roleId = 'f6a7b8c9-d0e1-4f5a-8b7c-9d8e7f6a5b4c';
+
+const response = await fetch(`https://your-domain.com/api/roles/${roleId}`, {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const data = await response.json();
+```
+
+### Example response
+
+```json
+{
+  "message": "Role found successfully",
+  "data": {
+    "id": "f6a7b8c9-d0e1-4f5a-8b7c-9d8e7f6a5b4c",
+    "name": "editor",
+    "description": "Can edit releases and manage artists",
+    "createdById": "550e8400-e29b-41d4-a716-446655440000",
+    "createdAt": "2024-03-04T10:00:00.000Z",
+    "updatedAt": "2024-03-04T10:00:00.000Z"
+  }
+}
+```
+
+## Role object structure
+
+<ResponseField name="id" type="string">
+  Unique role identifier (UUID)
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Unique role name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the role and its permissions
+</ResponseField>
+
+<ResponseField name="createdById" type="string">
+  ID of the user who created the role
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the role was created (ISO 8601)
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Timestamp when the role was last updated (ISO 8601)
+</ResponseField>
+
+## Built-in roles
+
+The system includes these built-in roles:
+
+- **user** - Standard user with basic permissions
+- **admin** - Administrator with elevated permissions
+- **SUPER_ADMIN** - Super administrator with full access
+
+## Notes
+
+- Role names must be unique across the system
+- You can create custom roles with specific permission sets
+- Roles are used throughout the API for access control
+- The `createdById` field tracks who created each role
+- Role-based access control is enforced using the `@Roles()` decorator in the API

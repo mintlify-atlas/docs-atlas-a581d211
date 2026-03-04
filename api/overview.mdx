@@ -1,0 +1,123 @@
+---
+title: API overview
+description: Learn about the Lens Music API structure, authentication, and available endpoints
+---
+
+The Lens Music API provides a RESTful interface for managing music releases, artists, labels, and related metadata. All endpoints follow consistent patterns and return JSON responses.
+
+## Base URL
+
+All API requests are made to:
+
+```
+https://your-domain.com/api
+```
+
+The API uses a global prefix `/api` for all endpoints.
+
+## Authentication
+
+Most endpoints require JWT authentication. Include your access token in the `Authorization` header:
+
+```bash
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+See the [Authentication](/api/authentication) page for details on obtaining tokens.
+
+## Response format
+
+All successful responses follow this structure:
+
+```json
+{
+  "message": "Operation description",
+  "data": {
+    // Response data
+  }
+}
+```
+
+## Error responses
+
+Error responses include an HTTP status code and error details:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Error description",
+  "error": "Bad Request"
+}
+```
+
+Common status codes:
+- `200` - Success
+- `201` - Created
+- `204` - No Content
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `409` - Conflict
+
+## Available endpoints
+
+### Authentication
+
+- `POST /api/auth/signup` - Create a new user account
+- `POST /api/auth/login` - Login and obtain access token
+
+### Users
+
+- `DELETE /api/users/:id` - Delete a user (Admin only)
+
+### Artists
+
+- `POST /api/artists` - Create a new artist
+- `GET /api/artists` - List all artists
+- `GET /api/artists/:id` - Get artist by ID
+- `PATCH /api/artists/:id` - Update an artist
+- `DELETE /api/artists/:id` - Delete an artist
+
+### Labels
+
+- `POST /api/labels` - Create a new label
+- `GET /api/labels` - List all labels
+- `GET /api/labels/:id` - Get label by ID
+- `PATCH /api/labels/:id` - Update a label
+- `DELETE /api/labels/:id` - Delete a label
+
+### Releases
+
+- `POST /api/releases` - Create a new release
+- `GET /api/releases` - List all releases
+- `GET /api/releases/:id` - Get release by ID
+
+### Lyrics
+
+- `POST /api/lyrics` - Create lyrics for a track
+- `GET /api/lyrics` - List all lyrics
+- `GET /api/lyrics/:id` - Get lyrics by ID
+
+### Roles
+
+- `POST /api/roles` - Create a new role
+- `GET /api/roles` - List all roles
+- `GET /api/roles/:id` - Get role by ID
+
+## Pagination
+
+List endpoints support pagination with query parameters:
+
+- `size` - Number of items per page (default: 10)
+- `page` - Page number, zero-indexed (default: 0)
+
+Example:
+
+```bash
+GET /api/artists?size=20&page=1
+```
+
+## Rate limiting
+
+The API implements rate limiting to ensure fair usage. If you exceed the rate limit, you'll receive a `429 Too Many Requests` response.
